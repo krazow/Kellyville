@@ -1,2 +1,4 @@
 shots/
+**/shots/
 __pycache__/
+tests/**/*.png

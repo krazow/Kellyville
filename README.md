@@ -11,6 +11,15 @@ Built for phones and playable offline. The whole game is one self-contained `ind
 
 ## Features
 
+**New in v2**
+- **Walk your farm:** a top-down world you explore with a thumb joystick, by tapping where to go, or with WASD. Walk up to anything to use it. A 🧭 Go-to menu, zoom buttons and a classic list view are included.
+- **Tractors:** six machines, from a Rusty '72 Utility Tractor to an Italian-Inspired Supercar Tractor. Each one boosts yield by +5% to +40%. Drive one over your fields to auto-harvest, and the top tiers auto-plant. Diesel, repairs and breakdowns are part of the deal.
+- **Beef cattle ranch:** buy calves at the Ellensburg Livestock Auction (Angus, Hereford, Red Angus, Simmental), feed them hay and raise them to steers. You can breed with a bull, upgrade the pasture, sell at auction, or send cattle to the butcher for ground beef, ribeye and brisket.
+- **Your own farm stand:** name it, stock its shelves from the barn, and pick Bargain, Fair or Premium pricing. Roadside customers stop by: WSU students, Spokane day-trippers, wine-country tourists, cyclists and food-truck chefs. Upgrades run up to a full Kellyville Farm Shop, and the stand sells while you're away.
+- **Farm-to-table restaurant:** win over the county planning board through a permit hearing, inspections and a barn conversion. Then prep dishes from your own produce and beef, run dinner services, hire a cook, a server and a host, and chase five-star reviews.
+
+**Core**
+
 - **Your own farmer:** pick a name, farm name and avatar (editable any time in the Almanac).
 - **Real-time farming:** 16 regional crops with seasons (a 90-second day and 7-day seasons). Out-of-season planting halves the yield.
 - **Animals:** chickens, dairy cows, sheep and bees, fed from your own Feed Mill.
@@ -26,11 +35,11 @@ Built for phones and playable offline. The whole game is one self-contained `ind
 
 ## Development
 
-The source lives in `src/` as separate modules (`core`, `data`, `events`, `economy`, `ui`). `docs/ARCHITECTURE.md` describes the contract between them.
+The source lives in `src/` as separate modules (`core`, `data`, `events`, `economy`, `machines`, `ranch`, `stand`, `restaurant`, `ui`, `world`). `docs/ARCHITECTURE.md` and `docs/V2-CONTRACT.md` describe the contracts between them.
 
 ```bash
 python3 build.py                     # rebuilds index.html from src/
-python3 tests/test_integration.py    # headless mobile-viewport smoke test (needs Playwright + Chrome)
+python3 tests/test_v2.py             # end-to-end mobile-viewport test (needs Playwright + Chrome)
 ```
 
 Edit `src/`, never `index.html` directly.

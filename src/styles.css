@@ -395,3 +395,39 @@ input{font:inherit;-webkit-user-select:text;user-select:text}
   .logo span{font-size:22px}.tab span{font-size:10px}.chip{font-size:11px;padding:0 8px}
 }
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+/* ===== walkable farm world ===== */
+.w-listbar{display:none;margin:6px 0 -6px}
+#app[data-world=off] .w-listbar{display:block}
+#w-back{min-height:44px;padding:0 16px;border-radius:22px;font-size:14px;font-weight:900;color:#5a3306;background:linear-gradient(#ffe39a,#f3b94b);box-shadow:0 3px 0 #b8801f,0 6px 10px rgba(0,0,0,.25)}
+#world{position:fixed;z-index:6;overflow:hidden;background:#2f3d20;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#w-cv{position:absolute;left:0;top:0;width:100%;height:100%;display:block;touch-action:none}
+.w-top{position:absolute;left:8px;top:8px;display:flex;gap:6px;z-index:2}
+.w-chip{min-height:40px;padding:0 13px;border-radius:20px;font-size:13px;font-weight:900;color:#5a3306;white-space:nowrap;
+  background:linear-gradient(#fff6dc,#ffe3a0);border:2px solid #d9a441;box-shadow:0 3px 0 rgba(130,80,15,.45),0 6px 10px rgba(0,0,0,.25)}
+.w-chip:active{transform:translateY(2px)}
+.w-chip.on{background:linear-gradient(#8be05a,#4fa52f);color:#fff;border-color:#3e8223;text-shadow:0 1px 0 rgba(0,0,0,.3)}
+.w-zoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px;z-index:2}
+.w-zoom button{width:42px;height:42px;border-radius:21px;font-size:20px;font-weight:900;color:#5a3306;line-height:1;
+  background:linear-gradient(#fff6dc,#ffe3a0);border:2px solid #d9a441;box-shadow:0 3px 0 rgba(130,80,15,.45),0 6px 10px rgba(0,0,0,.25)}
+.w-zoom button:active{transform:translateY(2px)}
+#w-zones{position:absolute;left:8px;top:54px;right:58px;z-index:3;display:flex;flex-wrap:wrap;gap:6px;padding:8px;border-radius:18px;
+  background:rgba(255,246,220,.96);border:3px solid #d9b46a;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+#w-zones button{min-height:40px;padding:0 11px;border-radius:16px;font-size:13px;font-weight:900;color:#4a2f14;background:#f6ecd0;border:2px solid #e0c98c}
+#w-zones button:active{background:#ffd45e}
+#w-drive{position:absolute;left:10px;bottom:14px;z-index:2;min-height:48px;padding:0 16px;font-size:15px}
+#w-act{position:absolute;right:calc(14px + env(safe-area-inset-right,0px));bottom:16px;z-index:2;min-height:64px;min-width:140px;max-width:78%;padding:0 22px 0 16px;border-radius:34px;
+  display:flex;align-items:center;justify-content:center;gap:10px;font-size:19px;font-weight:900;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.3);
+  background:linear-gradient(#8be05a,#4fa52f);border:3px solid #fff4cf;box-shadow:0 5px 0 var(--green-d),0 12px 20px rgba(0,0,0,.4);animation:wactpop .25s,wactpulse 1.6s ease-in-out .3s infinite}
+#w-act b{font-size:30px;line-height:1;font-weight:400;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25))}
+#w-act span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#w-act.gold{background:linear-gradient(#ffd45e,#f2a91c);color:#5a3306;text-shadow:0 1px 0 rgba(255,255,255,.5);box-shadow:0 5px 0 var(--gold-d),0 12px 20px rgba(0,0,0,.4)}
+#w-act.blue{background:linear-gradient(#6cbcf0,#3b8fd0);box-shadow:0 5px 0 var(--blue-d),0 12px 20px rgba(0,0,0,.4)}
+#w-act:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.3)}
+@keyframes wactpop{from{transform:scale(.6);opacity:0}}
+@keyframes wactpulse{50%{transform:scale(1.04)}}
+#w-joy{position:absolute;left:0;top:0;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;z-index:2;pointer-events:none;
+  background:radial-gradient(circle,rgba(255,246,220,.25),rgba(255,246,220,.5));border:3px solid rgba(255,246,220,.85);box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#w-joy i{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:linear-gradient(#fff6dc,#ffd45e);border:3px solid #d9a441;box-shadow:0 3px 8px rgba(0,0,0,.4)}
+#app[data-world=on] .fab-dock{bottom:calc(var(--tab-h) + var(--sab) + 96px)}
+@media (prefers-reduced-motion:reduce){#w-act{animation:none}}

@@ -92,14 +92,18 @@
 
   // ---------- modifiers (events.js supplies G.Events.mods; defaults are neutral) ----------
   // Every multiplier hook receives a key and returns a number (1 = no effect).
+  // Extra modifier hooks: any module may register fn(key) -> multiplier for 'growth'|'yield'|'animal'|'price'.
+  G.modHooks = { growth: [], yield: [], animal: [], price: [] };
+  G.addModHook = function (type, fn) { (G.modHooks[type] = G.modHooks[type] || []).push(fn); };
+  const hookMult = (type, key) => (G.modHooks[type] || []).reduce((m, fn) => { try { const v = +fn(key); return m * (isFinite(v) && v > 0 ? v : 1); } catch (e) { return m; } }, 1);
   G.mods = {
-    growth(cropKey) { return (G.Events && G.Events.growthMult) ? G.Events.growthMult(cropKey) : 1; },   // >1 = slower growth (time multiplier)
-    yield(cropKey) { return (G.Events && G.Events.yieldMult) ? G.Events.yieldMult(cropKey) : 1; },       // >1 = more harvest
-    animal(animalKey) { return (G.Events && G.Events.animalMult) ? G.Events.animalMult(animalKey) : 1; }, // >1 = slower production
+    growth(cropKey) { return ((G.Events && G.Events.growthMult) ? G.Events.growthMult(cropKey) : 1) * hookMult('growth', cropKey); },   // >1 = slower growth (time multiplier)
+    yield(cropKey) { return ((G.Events && G.Events.yieldMult) ? G.Events.yieldMult(cropKey) : 1) * hookMult('yield', cropKey); },       // >1 = more harvest
+    animal(animalKey) { return ((G.Events && G.Events.animalMult) ? G.Events.animalMult(animalKey) : 1) * hookMult('animal', animalKey); }, // >1 = slower production
     price(productKey) {
       const ev = (G.Events && G.Events.priceMult) ? G.Events.priceMult(productKey) : 1;
       const mk = (G.state.market && G.state.market[productKey]) || 1;
-      return ev * mk;
+      return ev * mk * hookMult('price', productKey);
     },
     seasonYield(cropKey) {
       const c = G.DATA.crops[cropKey]; if (!c || !c.seasons) return 1;
@@ -165,6 +169,19 @@
     if (!clean) return false;
     G.state.farmName = clean; G.bus.emit('change'); G.save(); return true;
   };
+
+  // ---------- module helpers ----------
+  // Inject a module's own CSS once (modules must not edit styles.css).
+  G.injectCSS = function (id, css) {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('css-' + id)) return;
+    const el = document.createElement('style'); el.id = 'css-' + id; el.textContent = css; document.head.appendChild(el);
+  };
+  // Panels: modules register G.panels[key] = { title(arg), sub?(arg), render(arg) -> html|null, onAction(action, el, arg), live?:bool }
+  // UI opens them in the bottom sheet. Inside render(), clickable elements use data-act="pact" data-pa="<action>" plus any data-*.
+  G.panels = G.panels || {};
+  G.openPanel = G.openPanel || function (key, arg) { console.log('[panel]', key, arg); };
+  G.closePanel = G.closePanel || function () { };
 
   // ---------- notifications (UI overrides G.toast) ----------
   G.toast = G.toast || function (msg, kind) { console.log('[toast]', kind || '', msg); };

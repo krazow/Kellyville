@@ -89,6 +89,7 @@
   function bump(el) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
   function tapOrigin() {
     if (UI.tapRect && Date.now() - UI.tapAt < 2000) return UI.tapRect;
+    if (UI.tab === 'farm' && G.World && G.World.playerRect) { const r = G.World.playerRect(); if (r) return r; }
     return { left: innerWidth / 2 - 10, top: innerHeight * 0.55, width: 20, height: 20 };
   }
   function confetti() {
@@ -387,15 +388,20 @@
 
   // ---------- view switching / render ----------
   function renderView() {
-    ({ farm: renderFarm, orders: renderOrders, shop: renderShop, barn: renderBarn, almanac: renderAlmanac }[UI.tab] || renderFarm)();
+    ({ farm: () => { if (!worldOn()) renderFarm(); }, orders: renderOrders, shop: renderShop, barn: renderBarn, almanac: renderAlmanac }[UI.tab] || renderFarm)();
   }
+  // The Farm tab is a walkable canvas world (world.js) unless the player chose the old list view or world.js is unavailable.
+  function worldOn() { return !!(G.World && G.World.enabled && G.World.enabled()) && !(S().flags && S().flags['world.list']); }
   function showTab(t) {
     UI.tab = t;
     const app = $('#app'); app.dataset.tab = t;
-    $$('.view').forEach(v => { v.hidden = v.dataset.view !== t; });
+    const wo = t === 'farm' && worldOn();
+    app.dataset.world = wo ? 'on' : 'off';
+    $$('.view').forEach(v => { v.hidden = v.dataset.view !== t || (wo && t === 'farm'); });
     $$('#tabbar .tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
     if (t === 'almanac') fillProfile(true);
     renderAll(); scrollTo(0, 0);
+    G.bus.emit('tab', t);
   }
   function renderBadges() {
     const n = ordersList().filter(o => !isSlotCool(o) && canFul(o)).length;
@@ -467,15 +473,24 @@
   function renderSheet() {
     const sp = UI.sheet; if (!sp) return;
     let html = '';
-    try { html = sp.kind === 'seed' ? seedSheet(sp) : sp.kind === 'bld' ? bldSheet(sp) : eventSheet(sp); } catch (e) { console.error(e); }
+    try { html = sp.kind === 'panel' ? panelSheet(sp) : sp.kind === 'seed' ? seedSheet(sp) : sp.kind === 'bld' ? bldSheet(sp) : eventSheet(sp); } catch (e) { console.error(e); }
     if (html == null) { closeSheet(); return; }
     const body = $('#sheet-body'); if (body._h === html) return;
+    // never clobber a field the player is typing in
+    if (sp.kind === 'panel' && body._h && document.activeElement && body.contains(document.activeElement) && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
     const hs = $('.hscroll', body), sl = hs ? hs.scrollLeft : 0, st = body.scrollTop;
     body.innerHTML = html; body._h = html;
     const hs2 = $('.hscroll', body); if (hs2) hs2.scrollLeft = sl; body.scrollTop = st;
     updateTimers();
   }
   const head = (title, sub) => `<div class="sh-head"><div><h3>${title}</h3>${sub ? `<small>${sub}</small>` : ''}</div><button class="sh-x" data-act="sheet-close" aria-label="Close">✕</button></div>`;
+  function panelSheet(sp) {
+    const P = G.panels && G.panels[sp.key]; if (!P) return null;
+    const body = P.render ? P.render(sp.arg) : '';
+    if (body == null) return null;
+    const t = P.title ? P.title(sp.arg) : sp.key, sub = P.sub ? P.sub(sp.arg) : '';
+    return head(t, sub) + `<div class="panel-body" data-panel="${esc(sp.key)}">${body}</div>`;
+  }
   function seedSheet(sp) {
     const s = S(), season = G.calendar().season, last = s.flags['ui.lastCrop'];
     const crops = Object.entries(D().crops || {}).sort((a, b) => (a[1].level || 1) - (b[1].level || 1) || a[1].seedCost - b[1].seedCost);
@@ -591,7 +606,7 @@
     return {
       html: `<div class="mcard"><div class="wel-av">${esc(avatar())}</div><h2>Welcome to Kellyville!</h2><p style="margin-bottom:6px">Farm life in Eastern Washington, from golden Palouse wheat to Wenatchee apples.</p>
         <label class="name-lbl" for="name-in">What's your name, farmer?</label><input id="name-in" class="name-in" maxlength="20" autocomplete="off" autocapitalize="words" placeholder="Your name" value="${esc(S().playerName || '')}">
-        <ul class="tips"><li><i>🌱</i><span>Tap an empty plot to plant. Crops grow in real time, and in-season crops give full yield.</span></li><li><i>📋</i><span>Fill truck orders for coins and XP, and sell extras from the Barn.</span></li><li><i>⛈️</i><span>Dust, frost, fire and lucky breaks can strike. Buy upgrades in the Shop to protect your farm.</span></li></ul>
+        <ul class="tips"><li><i>🚶</i><span>Walk your farm! Drag anywhere to steer (a joystick appears under your thumb) or tap a spot to walk there.</span></li><li><i>🌱</i><span>Walk up to a plot, animal or building and tap the big action button to plant, harvest, feed or open it.</span></li><li><i>📋</i><span>Fill truck orders at the mailbox for coins and XP, and sell extras from the Barn.</span></li><li><i>⛈️</i><span>Dust, frost, fire and lucky breaks can strike. Buy upgrades in the Shop to protect your farm.</span></li></ul>
         <button class="btn btn-green ${named ? '' : 'off'}" id="wel-go" data-act="welcome-go" ${named ? '' : 'aria-disabled="true"'}>🚜 Start farming</button></div>`,
       onShow(root) {
         const inp = $('#name-in', root), go = $('#wel-go', root); if (!inp) return;
@@ -651,6 +666,12 @@
     seedall() { UI.seedAll = !UI.seedAll; renderSheet(); },
     plantall(el) { const k = S().flags['ui.lastCrop']; if (!k || el.getAttribute('aria-disabled')) return; plantMany(k); },
     'sheet-close'() { closeSheet(); },
+    pact(el, e) {
+      const sp = UI.sheet; if (!sp || sp.kind !== 'panel') return;
+      const P = G.panels && G.panels[sp.key]; if (!P || !P.onAction) return;
+      if (el.getAttribute('aria-disabled') === 'true' && !el.dataset.always) { if (el.dataset.why) G.toast(el.dataset.why, 'bad'); return; }
+      P.onAction(el.dataset.pa, el, sp.arg, e); queueRender();
+    },
     'sheet-bg'(el, e) { if (e.target === el) closeSheet(); },
     feed(el) { G.feedAnimal(+el.dataset.i); },
     collect(el) { G.collectAnimal(+el.dataset.i); },
@@ -724,13 +745,18 @@
   function wire() {
     const on = (n, f) => G.bus.on(n, p => { try { f(p); } catch (e) { console.error('[ui]', n, e); } });
     on('change', queueRender);
-    on('tick', p => { const now = (p && p.now) || Date.now(); updateTimers(now); updateSky(p && p.cal); updateSeasonChip(p && p.cal); tickChecks(now); });
+    on('tick', p => {
+      const now = (p && p.now) || Date.now(); updateTimers(now); updateSky(p && p.cal); updateSeasonChip(p && p.cal); tickChecks(now);
+      const sp = UI.sheet; if (sp && sp.kind === 'panel') { const P = G.panels && G.panels[sp.key]; if (P && P.live) renderSheet(); }
+    });
     on('state:reset', () => {
       closeSheet(); UI.modals = []; UI.cur = null; $('#modal-root').hidden = true; UI.sig = {};
       showTab('farm'); setTimeout(() => pushModal(welcomeModal()), 200);
     });
     on('harvested', p => {
-      const el = $(`[data-plot="${p.plotIdx}"]`), r = el ? el.getBoundingClientRect() : tapOrigin();
+      const el = $(`[data-plot="${p.plotIdx}"]`);
+      let r = el ? el.getBoundingClientRect() : null;
+      if (!r || !r.width) r = (G.World && G.World.plotRect && G.World.plotRect(p.plotIdx)) || tapOrigin();
       const k = ++UI.flySeq;
       fly(`+${p.n} ${esc(iEmoji(p.cropKey))}`, r, $('#hud-barn-pill'), { delay: (k - 1) * 90 });
     });
@@ -754,6 +780,23 @@
     on('event:choice', p => { if (p && p.event) { dismissEventModal(p.event.id); } queueRender(); });
     on('player:rename', queueRender);
   }
+
+  // ---------- public UI kit for other modules ----------
+  G.openPanel = function (key, arg) { if (!G.panels || !G.panels[key]) { console.warn('no panel', key); return; } openSheet({ kind: 'panel', key, arg }); };
+  G.closePanel = closeSheet;
+  G.refreshPanel = () => { const b = $('#sheet-body'); if (b) b._h = null; renderSheet(); };
+  G.panelOpen = () => (UI.sheet && UI.sheet.kind === 'panel') ? UI.sheet.key : null;
+  // Generic modal: G.showModal({ emoji, title, text, html?, kind:'good'|'bad'|'neutral', buttons:[{label, cls:'btn-gold'|'btn-green'|'btn-gray'|'btn-red', onClick}] , confetti?:bool })
+  G.showModal = function (o) {
+    o = o || {}; const btns = (o.buttons && o.buttons.length ? o.buttons : [{ label: 'OK', cls: 'btn-gold' }]);
+    const spec = {
+      html: `<div class="mcard ${o.kind ? 'ev ' + esc(o.kind) : ''}">${o.emoji ? `<div class="wel-av">${esc(o.emoji)}</div>` : ''}${o.title ? `<h2>${esc(o.title)}</h2>` : ''}${o.text ? `<p>${esc(o.text)}</p>` : ''}${o.html || ''}${btns.map((b, i) => `<button class="btn ${esc(b.cls || 'btn-gold')}" data-act="m-choice" data-i="${i}">${esc(b.label)}</button>`).join('')}</div>`,
+      onChoice(i) { nextModal(); try { btns[i] && btns[i].onClick && btns[i].onClick(); } catch (e) { console.error(e); } queueRender(); },
+      onShow: o.confetti ? confetti : null
+    };
+    pushModal(spec);
+  };
+  G.uikit = { worldOn, openSeed: i => openSheet({ kind: 'seed', plot: i }), openBuilding: i => openSheet({ kind: 'bld', i }), openEvent: id => openSheet({ kind: 'event', id }), closeSheet, sheetOpen: () => !!UI.sheet, esc, fmt, fmtT, needChips, iEmoji, iName, tm, fly, confetti, bump, tapOrigin, queueRender, showTab: t => showTab(t), tab: () => UI.tab };
 
   // ---------- init ----------
   G.bus.on('init', function () {

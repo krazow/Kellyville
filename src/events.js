@@ -621,6 +621,11 @@
 
   // ---------- public API ----------
   G.Events = {
+    register(def) {
+      if (!def || !def.key || DEF[def.key]) return false;
+      def.weight = def.weight == null ? 1 : def.weight; def.seasons = def.seasons || ['spring', 'summer', 'fall', 'winter']; def.minLevel = def.minLevel || 1;
+      defs.push(def); DEF[def.key] = def; return true;
+    },
     definitions: defs,
     growthMult: key => combined('growth', key),
     yieldMult: key => combined('yield', key),

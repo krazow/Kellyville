@@ -4,7 +4,8 @@ import pathlib, re
 root = pathlib.Path(__file__).parent
 src = root / 'src'
 read = lambda n: (src / n).read_text(encoding='utf-8')
-js_order = ['core.js', 'data.js', 'events.js', 'economy.js', 'ui.js']
+js_order = ['core.js', 'data.js', 'events.js', 'economy.js', 'machines.js', 'ranch.js', 'stand.js', 'restaurant.js', 'ui.js', 'world.js']
+js_order = [n for n in js_order if (src / n).exists()]
 scripts = '\n'.join(f'<script>/* ---- {n} ---- */\n{read(n)}\n</script>' for n in js_order)
 html = f'''<!DOCTYPE html>
 <html lang="en">

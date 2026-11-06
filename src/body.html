@@ -83,6 +83,7 @@
   <!-- ===== Views ===== -->
   <main id="views">
     <section class="view" id="view-farm" data-view="farm">
+      <div class="w-listbar"><button id="w-back" type="button">🗺️ Back to farm map</button></div>
       <div class="skyline-gap"><div class="logo"><span>Kellyville</span><small>Eastern Washington</small></div></div>
       <div class="sec"><h2>🌾 Fields</h2><span class="sec-info" id="field-info"></span></div>
       <div class="plots" id="plots"></div>
@@ -136,6 +137,20 @@
       <div class="reset-wrap"><button class="btn btn-red" data-act="reset">🗑️ Reset farm</button></div>
     </section>
   </main>
+
+  <!-- ===== Walkable farm world (canvas, owned by world.js) ===== -->
+  <div id="world" hidden>
+    <canvas id="w-cv" aria-label="Your farm. Drag to walk, tap to go somewhere."></canvas>
+    <div class="w-top">
+      <button id="w-list" class="w-chip" type="button">📋 List view</button>
+      <button id="w-go" class="w-chip" type="button">🧭 Go to</button>
+    </div>
+    <div class="w-zoom"><button id="w-zin" type="button" aria-label="Zoom in">＋</button><button id="w-zout" type="button" aria-label="Zoom out">－</button></div>
+    <div id="w-zones" hidden></div>
+    <button id="w-drive" class="w-chip" type="button" hidden>🚜 Drive</button>
+    <button id="w-act" type="button" hidden><b id="w-act-e"></b><span id="w-act-t"></span></button>
+    <div id="w-joy" hidden><i></i></div>
+  </div>
 
   <!-- ===== Floating bits ===== -->
   <div class="dock fab-dock"><button id="fab-harvest" class="fab" data-act="harvestall" hidden>🧺 Harvest all <b id="fab-n"></b></button></div>
