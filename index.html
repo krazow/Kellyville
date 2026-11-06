@@ -5239,7 +5239,7 @@ ${btn('stock', amt > 0 ? `Stock ${amt} ${esc(itemEmoji(ui.key))}` : 'Nothing to 
     stand: { x: 4, y: 23, w: 5, h: 2, pt: [6.5, 25.55], emoji: '🧺', label: 'Farm stand' },
     shop: { x: 32, y: 23, w: 5, h: 2, pt: [34.5, 25.55], emoji: '🏪', label: 'Co-op store' },
     pasture: { x: 30, y: 12, w: 8, h: 10, pt: [29.4, 17], emoji: '🐄', label: 'Pasture' },
-    fields: { x: 2, y: 9, w: 12, h: 12, pt: [8, 8.4], emoji: '🌾', label: 'Fields', nosolid: true },
+    fields: { x: 2, y: 9, w: 12, h: 12, pt: [7, 8.6], emoji: '🌾', label: 'Fields', nosolid: true },
     pens: { x: 15, y: 9, w: 12, h: 9, pt: [21, 13.5], emoji: '🐔', label: 'Animal pens', nosolid: true },
     buildings: { x: 15, y: 19, w: 12, h: 5, pt: [20.5, 21], emoji: '🏭', label: 'Buildings', nosolid: true }
   };
@@ -5454,10 +5454,10 @@ ${btn('stock', amt > 0 ? `Stock ${amt} ${esc(itemEmoji(ui.key))}` : 'Nothing to 
   function getTargets() {
     const s = S(), out = [];
     const T_ = (id, r, pt, range, a, extra) => { const o = { id, r, pt, range, a }; if (extra) Object.assign(o, extra); out.push(o); return o; };
-    s.plots.forEach((p, i) => { const r = plotRect(i); T_('plot' + i, r, [r.x + 1, r.y + 1], 0.5, plotAct(i, p), { plot: i }); });
+    s.plots.forEach((p, i) => { const r = plotRect(i); T_('plot' + i, r, [r.x + 1, r.y + 1], 0.75, plotAct(i, p), { plot: i }); });
     if (s.plots.length < s.maxPlots) {
       const r = plotRect(s.plots.length);
-      T_('buyland', r, [r.x + 1, r.y + 1], 0.5, { emoji: '➕', text: 'Buy land 🪙' + G.plotCost(), prio: 1, tone: 'gold', fn: () => { if (G.buyPlot()) G.toast('New plot of land!', 'good'); } });
+      T_('buyland', r, [r.x + 1, r.y + 1], 0.75, { emoji: '➕', text: 'Buy land 🪙' + G.plotCost(), prio: 1, tone: 'gold', fn: () => { if (G.buyPlot()) G.toast('New plot of land!', 'good'); } });
     }
     L.pens.forEach(pen => {
       if (pen.owned) T_('pen' + pen.k, pen.rect, [pen.gx, pen.gy], 1.2, penAct(pen), { pen });
@@ -5588,7 +5588,8 @@ ${btn('stock', amt > 0 ? `Stock ${amt} ${esc(itemEmoji(ui.key))}` : 'Nothing to 
     cv.addEventListener('contextmenu', e => e.preventDefault());
     const KM = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right', ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down' };
     addEventListener('keydown', e => {
-      if (!V.run || uiBlocked() || e.metaKey || e.ctrlKey) return;
+      if (!V.run || uiBlocked() || e.metaKey || e.ctrlKey || e.defaultPrevented || e.isComposing) return;
+      const tg = e.target, tn = tg && tg.tagName; if (tn === 'INPUT' || tn === 'TEXTAREA' || tn === 'SELECT' || (tg && tg.isContentEditable)) return;
       const k = KM[e.key]; if (k) { IN.keys[k] = true; P.path = null; P.pend = null; e.preventDefault(); }
       else if ((e.key === 'e' || e.key === 'E' || e.key === ' ' || e.key === 'Enter') && hint) { runAction(hint); e.preventDefault(); }
     });
