@@ -1,0 +1,2830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#e9b949">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kellyville">
+<meta name="description" content="Kellyville: a cozy farming game set in Eastern Washington.">
+<title>Kellyville</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌾</text></svg>">
+<style>
+/* Kellyville — styles. Mobile-first, offline, emoji + gradients only. */
+:root{
+  --ink:#4a2f14; --ink2:#7a5a38; --cream:#fff6dc; --cream2:#ffe9b3; --paper:#fffaf0;
+  --gold:#f6b93b; --gold-d:#c98a14; --green:#5fae3a; --green-d:#3e8223; --red:#d9483b; --red-d:#a42d23;
+  --blue:#4aa3e0; --blue-d:#2c78b0; --brown:#8a5a2b;
+  --line:#e2c98d;
+  --tab-h:66px; --hud-h:110px;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+  --h1:#a9bf9a; --h2:#9ccc65; --h3:#7fae55; --h4:#6f9a46;
+  --card-sh:0 4px 0 rgba(110,70,20,.28),0 10px 18px rgba(50,30,5,.22);
+}
+#app[data-season=spring]{--h1:#9fbfa8;--h2:#a9cf72;--h3:#86b55a;--h4:#709f48}
+#app[data-season=summer]{--h1:#b9c39a;--h2:#ecc860;--h3:#dba843;--h4:#c4953a}
+#app[data-season=fall]{--h1:#bda585;--h2:#dc9d48;--h3:#bb7731;--h4:#9c6a33}
+#app[data-season=winter]{--h1:#b7c6d4;--h2:#e6edf3;--h3:#cfdbe5;--h4:#b9c6d2}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html{background:#2f3d20;-webkit-text-size-adjust:100%}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-weight:700;color:var(--ink);
+  background:repeating-linear-gradient(135deg,#34452a 0 18px,#2f3d20 18px 36px);overscroll-behavior-y:none}
+#app,#fx,.dock,#sheet-wrap,#modal-root{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+input{font:inherit;-webkit-user-select:text;user-select:text}
+
+#app{position:relative;max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;overflow-x:clip;box-shadow:0 0 40px rgba(0,0,0,.45)}
+
+/* ===== scenery ===== */
+#scene{position:absolute;inset:0;overflow:hidden;display:flex;flex-direction:column;z-index:0;
+  background:linear-gradient(180deg,var(--sky-top,#7cc8f0) 0,var(--sky-bot,#d6f0ff) 300px) no-repeat,var(--sky-bot,#d6f0ff)}
+.sky-pad{height:78px;flex:none}
+#hills{display:block;width:100%;height:auto;flex:none;margin-bottom:-1px;position:relative}
+#hills .h1{fill:var(--h1)} #hills .h2{fill:var(--h2)} #hills .h3{fill:var(--h3)} #hills .h4{fill:var(--h4)}
+#ground{flex:1;background:linear-gradient(180deg,rgba(70,40,10,0) 0,rgba(70,40,10,.32) 700px),var(--h4);position:relative}
+#shade{position:absolute;inset:0;background:var(--shade,transparent);pointer-events:none}
+#stars{position:absolute;left:0;right:0;top:0;height:260px;opacity:var(--stars,0);pointer-events:none;
+  background:radial-gradient(1.5px 1.5px at 12% 22%,#fff,transparent),radial-gradient(1.5px 1.5px at 30% 60px,#fff,transparent),radial-gradient(2px 2px at 48% 30px,#fff,transparent),
+  radial-gradient(1.5px 1.5px at 66% 90px,#fff,transparent),radial-gradient(1.5px 1.5px at 82% 40px,#fff,transparent),radial-gradient(1.5px 1.5px at 92% 120px,#fff,transparent),radial-gradient(1.5px 1.5px at 22% 130px,#fff,transparent),radial-gradient(2px 2px at 58% 150px,#fff,transparent)}
+#orb{position:absolute;font-size:38px;line-height:1;left:50%;top:150px;filter:drop-shadow(0 0 14px rgba(255,230,120,.9));pointer-events:none;will-change:transform}
+.cloud{position:absolute;height:22px;width:84px;border-radius:30px;background:rgba(255,255,255,.88);animation:drift 70s linear infinite;pointer-events:none}
+.cloud::before,.cloud::after{content:"";position:absolute;background:inherit;border-radius:50%}
+.cloud::before{width:34px;height:34px;left:14px;top:-16px}.cloud::after{width:26px;height:26px;left:42px;top:-10px}
+.c1{top:96px;left:-120px}.c2{top:140px;left:-120px;animation-duration:95s;animation-delay:-40s;transform:scale(.7)}.c3{top:70px;left:-120px;animation-duration:120s;animation-delay:-80s;transform:scale(.55)}
+@keyframes drift{to{margin-left:700px}}
+
+/* ===== HUD ===== */
+#hud{position:sticky;top:0;z-index:30;padding:calc(var(--sat) + 6px) 10px 8px;
+  background:linear-gradient(180deg,#fff4d2,#ffe3a0);border-bottom:3px solid #d9a441;border-radius:0 0 22px 22px;
+  box-shadow:0 5px 0 rgba(120,70,20,.28),0 10px 20px rgba(40,20,0,.28)}
+.hud-top{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.who{flex:1;min-width:0;display:flex;align-items:center;gap:5px;background:#fffaf0;border:2px solid #e8c978;border-radius:16px;padding:2px 10px 2px 3px;height:28px}
+.who-av{font-size:18px;line-height:1;width:22px;text-align:center;flex:none}
+.who-txt{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:16px;padding:0 10px;height:28px;font-size:12px;font-weight:900;white-space:nowrap;flex:none}
+.chip.season{background:linear-gradient(#ffd86b,#f6b93b);border:2px solid #c98a14;box-shadow:0 2px 0 rgba(150,90,10,.35)}
+.hud-row{display:flex;align-items:center;gap:10px}
+.lvl{position:relative;width:54px;height:54px;flex:none}
+.ring{position:relative;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;
+  background:conic-gradient(#6cc04a calc(var(--p,0)*1%),#e3cf9c 0);box-shadow:0 3px 0 rgba(110,70,20,.35)}
+.ring::before{content:"";position:absolute;inset:6px;border-radius:50%;background:linear-gradient(#ffd86b,#f2a31b);box-shadow:inset 0 -3px 0 rgba(150,80,0,.35),inset 0 2px 0 rgba(255,255,255,.55)}
+.ring span{position:relative;font-size:21px;font-weight:900;color:#fff;text-shadow:0 2px 0 #b8680d,0 0 4px rgba(120,60,0,.5)}
+.lvl em{position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);font-style:normal;font-size:9px;font-weight:900;background:#5b3b1c;color:#ffe9b3;border-radius:8px;padding:1px 6px}
+.hud-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.hud-pills{display:flex;gap:8px}
+.pill{flex:1;display:flex;align-items:center;gap:6px;min-width:0;height:30px;padding:0 10px 0 6px;border-radius:16px;font-size:15px;font-weight:900;box-shadow:inset 0 2px 4px rgba(90,50,10,.25);position:relative}
+.pill b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill .ico{font-size:18px;line-height:1}
+.pill.coins{background:linear-gradient(#fff2b8,#ffe07a);border:2px solid #d9a729}
+.pill.barn{background:linear-gradient(#f4e2c6,#e8cfa4);border:2px solid #b98d52}
+.pill.barn.warn b{color:#c46a00}.pill.barn.full b{color:var(--red-d)}
+.pill.bump{animation:bump .4s}
+@keyframes bump{40%{transform:scale(1.14)}}
+.xpbar{position:relative;height:15px;border-radius:9px;background:#e3cf9c;overflow:hidden;box-shadow:inset 0 2px 3px rgba(90,50,10,.3)}
+.xpbar i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(#8bdc66,#4fa52f);border-radius:9px;transition:width .4s}
+.xpbar span{position:absolute;inset:0;display:grid;place-items:center;font-size:10px;font-weight:900;color:#4a2f14;text-shadow:0 1px 0 rgba(255,255,255,.7)}
+.strip{display:flex;gap:7px;overflow-x:auto;padding:7px 2px 1px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.strip::-webkit-scrollbar{display:none}
+.echip{flex:none;display:flex;align-items:center;gap:6px;min-height:44px;padding:4px 12px 4px 8px;border-radius:22px;font-size:12px;border:2px solid;text-align:left;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+.echip i{font-style:normal;font-size:22px;line-height:1}
+.echip b{display:block;font-weight:900;font-size:12px;line-height:1.1}
+.echip small{display:block;font-weight:800;font-size:11px;opacity:.85}
+.echip.good{background:linear-gradient(#e6f8c9,#bfe58b);border-color:#6fae3a;color:#2e5a14}
+.echip.bad{background:linear-gradient(#ffe0c8,#ffb48c);border-color:#d9622f;color:#7d2410}
+.echip.neutral{background:linear-gradient(#fff3d0,#ffe09a);border-color:#d9a441}
+
+/* ===== layout ===== */
+#views{position:relative;z-index:2;padding:0 12px calc(var(--tab-h) + var(--sab) + 96px)}
+.view{padding-top:18px;animation:fadein .25s}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}}
+.skyline-gap{height:128px;margin:-18px -12px 0;position:relative;display:flex;align-items:flex-start;justify-content:center;padding-top:14px;pointer-events:none}
+.logo{text-align:center;transform:rotate(-2deg)}
+.logo span{display:inline-block;font-size:26px;font-weight:900;letter-spacing:.5px;color:#fff6dc;padding:2px 16px 4px;border-radius:14px;
+  background:linear-gradient(#a8452f,#8d3322);border:3px solid #fff0cf;box-shadow:0 4px 0 rgba(80,25,10,.4);text-shadow:0 2px 0 rgba(60,15,5,.6)}
+.logo small{display:block;margin-top:3px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.sec{display:flex;align-items:center;justify-content:space-between;margin:20px 2px 9px}
+.sec:first-child{margin-top:0}
+.sec h2{margin:0;font-size:17px;font-weight:900;color:#fff6dc;text-shadow:0 2px 0 rgba(70,40,10,.7),0 0 8px rgba(60,30,0,.4)}
+.sec-info{font-size:11px;font-weight:900;color:#4a2f14;background:rgba(255,246,220,.92);border-radius:12px;padding:3px 9px}
+.empty-note{grid-column:1/-1;background:rgba(255,246,220,.94);border:2px dashed #cfa968;border-radius:18px;padding:16px;text-align:center;font-size:13px;color:var(--ink2)}
+
+/* ===== buttons ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border-radius:15px;font-size:15px;font-weight:900;color:#fff;
+  text-shadow:0 2px 0 rgba(0,0,0,.25);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px)}
+.btn-green{background:linear-gradient(#7fd04f,#52a82d);box-shadow:0 4px 0 var(--green-d),0 7px 10px rgba(0,0,0,.2)}
+.btn-gold{background:linear-gradient(#ffd45e,#f2a91c);box-shadow:0 4px 0 var(--gold-d),0 7px 10px rgba(0,0,0,.2);color:#5a3306;text-shadow:0 1px 0 rgba(255,255,255,.5)}
+.btn-red{background:linear-gradient(#f2705f,#d2402f);box-shadow:0 4px 0 var(--red-d),0 7px 10px rgba(0,0,0,.2)}
+.btn-blue{background:linear-gradient(#6cbcf0,#3b8fd0);box-shadow:0 4px 0 var(--blue-d),0 7px 10px rgba(0,0,0,.2)}
+.btn-gray{background:linear-gradient(#e7dcc3,#cfc0a0);box-shadow:0 4px 0 #a8976f;color:#5b4524;text-shadow:none}
+.btn:active.btn-green,.btn:active.btn-gold,.btn:active.btn-red,.btn:active.btn-blue,.btn:active.btn-gray{box-shadow:0 1px 0 rgba(0,0,0,.3)}
+.btn.sm{min-height:44px;padding:0 12px;font-size:14px}
+.btn.off,.btn[aria-disabled=true]{filter:grayscale(.85) brightness(1.05);opacity:.65}
+.btn-ico{width:44px;height:44px;border-radius:14px;font-size:20px;background:#f1e3c3;box-shadow:0 3px 0 #bfa56c;display:grid;place-items:center;flex:none}
+.btn-ico:active{transform:translateY(2px)}
+.poor{color:var(--red-d)}
+
+/* ===== plots ===== */
+.plots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:12px;border-radius:24px;
+  background:linear-gradient(180deg,#a4713a,#865628);box-shadow:0 5px 0 #5f3a16,0 12px 20px rgba(40,20,0,.3);border:3px solid #c28d52}
+.plot{position:relative;aspect-ratio:1/1;min-height:96px;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;overflow:hidden;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 3px,transparent 3px 11px),radial-gradient(circle at 30% 25%,#7a4c24,#5d3718);
+  box-shadow:inset 0 4px 8px rgba(0,0,0,.45),0 2px 0 rgba(255,220,160,.25);transition:transform .1s}
+.plot:active{transform:scale(.95)}
+.plot small{font-size:10px;font-weight:900;color:#fff2d0;text-shadow:0 1px 2px rgba(0,0,0,.7);position:relative}
+.plot .pe{font-size:38px;line-height:1;transform-origin:50% 85%;filter:drop-shadow(0 3px 2px rgba(0,0,0,.4));transition:transform .5s}
+.plot.empty .plus{font-size:30px;color:rgba(255,235,190,.6);font-weight:900;line-height:1}
+.plot.empty small{color:rgba(255,235,190,.7)}
+.pbar{width:72%;height:7px;border-radius:5px;background:rgba(0,0,0,.4);overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:linear-gradient(#9be86b,#56b02f);border-radius:5px}
+.plot.ready{background:repeating-linear-gradient(0deg,rgba(0,0,0,.08) 0 3px,transparent 3px 11px),radial-gradient(circle at 50% 40%,#d9a24a,#8b5a24);animation:glow 1.4s ease-in-out infinite}
+.plot.ready .pe{font-size:44px;animation:hop 1s ease-in-out infinite}
+.plot.ready small{color:#fff;font-size:11px}
+.plot .yb{position:absolute;top:5px;right:6px;background:#fff6dc;color:#5a3306;border-radius:10px;font-size:10px;font-weight:900;padding:1px 6px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.plot.withered{background:repeating-linear-gradient(0deg,rgba(0,0,0,.1) 0 3px,transparent 3px 11px),radial-gradient(circle,#6b5a48,#473a2c);filter:saturate(.6)}
+.plot.withered .pe{font-size:34px;filter:none}
+.plot.buy{background:repeating-linear-gradient(45deg,rgba(255,255,255,.12) 0 8px,transparent 8px 16px),linear-gradient(#ffe39a,#f3b94b);box-shadow:inset 0 0 0 3px rgba(255,255,255,.55),0 3px 0 #b8801f;color:#5a3306}
+.plot.buy .plus{font-size:28px;color:#7a4a08}.plot.buy small{color:#5a3306;text-shadow:none;font-size:11px;text-align:center}
+@keyframes hop{0%,100%{transform:translateY(0)}45%{transform:translateY(-7px) scale(1.05)}}
+@keyframes glow{0%,100%{box-shadow:inset 0 4px 8px rgba(0,0,0,.35),0 0 0 2px rgba(255,230,120,.5),0 0 12px 2px rgba(255,225,100,.5)}50%{box-shadow:inset 0 4px 8px rgba(0,0,0,.2),0 0 0 3px rgba(255,240,150,.95),0 0 22px 6px rgba(255,225,100,.85)}}
+
+/* ===== pens & buildings ===== */
+.pens{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pen,.bld{position:relative;border-radius:20px;padding:10px 6px 8px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:112px;
+  background:linear-gradient(180deg,var(--paper),var(--cream2));border:3px solid #e0bd72;box-shadow:var(--card-sh);transition:transform .1s}
+.pen:active,.bld:active{transform:scale(.96)}
+.pen .em,.bld .em{font-size:36px;line-height:1.1}
+.pen b,.bld b{font-size:12px;font-weight:900;line-height:1.1}
+.pen .st{font-size:11px;font-weight:900;border-radius:11px;padding:3px 8px;min-height:24px;display:inline-flex;align-items:center;gap:3px;justify-content:center}
+.pen.hungry{border-color:#e8a24a}.pen.hungry .st{background:#ffe2b3;color:#8a4a06}.pen.hungry .st.lack{background:#ffd0c6;color:var(--red-d)}
+.pen.hungry .em{animation:wobble 2.4s ease-in-out infinite}
+.pen.producing .st{background:#dff0c8;color:#2e5a14;width:100%}
+.pen.ready{border-color:#6fae3a;background:linear-gradient(180deg,#f5ffe0,#d4f0a4);animation:glow2 1.4s ease-in-out infinite}
+.pen.ready .st{background:linear-gradient(#7fd04f,#52a82d);color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.3)}
+.pen.ready .em{animation:hop 1s ease-in-out infinite}
+.mini{width:84%;height:7px;border-radius:5px;background:rgba(90,60,20,.25);overflow:hidden}
+.mini i{display:block;height:100%;width:0;background:linear-gradient(#9be86b,#56b02f);border-radius:5px}
+@keyframes wobble{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+@keyframes glow2{0%,100%{box-shadow:var(--card-sh),0 0 0 0 rgba(130,220,70,.0)}50%{box-shadow:var(--card-sh),0 0 16px 4px rgba(130,220,70,.7)}}
+.blds{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.bld{flex-direction:row;text-align:left;align-items:center;gap:10px;padding:10px 12px;min-height:84px}
+.bld .em{font-size:38px}
+.bld .bi{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.pips{display:flex;gap:4px}
+.pips i{width:14px;height:8px;border-radius:4px;background:#dcc896;box-shadow:inset 0 1px 2px rgba(0,0,0,.25)}
+.pips i.on{background:linear-gradient(#ffd45e,#f2a91c)}.pips i.done{background:linear-gradient(#7fd04f,#52a82d)}
+.bld small{font-size:10px;font-weight:800;color:var(--ink2)}
+.bld .cbtn{position:absolute;top:-8px;right:-4px;min-width:44px;min-height:44px}
+.bld.has-ready{border-color:#6fae3a;animation:glow2 1.4s ease-in-out infinite}
+.bld .rb{position:absolute;top:-8px;right:-6px;background:linear-gradient(#7fd04f,#52a82d);color:#fff;border-radius:14px;min-height:30px;padding:0 10px;display:grid;place-items:center;font-size:12px;font-weight:900;box-shadow:0 3px 0 var(--green-d);text-shadow:0 1px 0 rgba(0,0,0,.3)}
+
+/* ===== FAB / tabbar ===== */
+.dock{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:40}
+.fab-dock{bottom:calc(var(--tab-h) + var(--sab) + 12px);display:flex;justify-content:flex-end;padding:0 14px;pointer-events:none}
+.fab{pointer-events:auto;min-height:52px;padding:0 20px;border-radius:30px;font-size:16px;font-weight:900;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.3);
+  background:linear-gradient(#8be05a,#4fa52f);box-shadow:0 5px 0 var(--green-d),0 10px 18px rgba(0,0,0,.35);animation:fabpop .5s,fabpulse 1.6s ease-in-out .5s infinite}
+.fab:active{transform:translateY(3px)}
+@keyframes fabpop{from{transform:scale(.3);opacity:0}}
+@keyframes fabpulse{50%{transform:scale(1.05)}}
+#tabbar{bottom:0;display:flex;padding:6px 6px calc(6px + var(--sab));background:linear-gradient(#8a5a2b,#6b4220);border-top:3px solid #b98040;box-shadow:0 -6px 16px rgba(30,15,0,.35);border-radius:22px 22px 0 0}
+.tab{position:relative;flex:1;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-radius:16px;color:#f5deb2;transition:background .15s}
+.tab i{font-style:normal;font-size:24px;line-height:1;transition:transform .15s}
+.tab span{font-size:10.5px;font-weight:900}
+.tab.on{background:linear-gradient(#ffe39a,#f3b94b);color:#5a3306;box-shadow:inset 0 -3px 0 rgba(150,90,10,.35),0 2px 0 rgba(0,0,0,.2)}
+.tab.on i{transform:translateY(-2px) scale(1.12)}
+.badge{position:absolute;top:2px;right:calc(50% - 24px);min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font-style:normal;font-size:11px;font-weight:900;display:grid;place-items:center;padding:0 4px;border:2px solid #6b4220}
+.badge.warn{background:#f08a1c}
+
+/* ===== toasts ===== */
+#toasts{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--hud-h) + 8px);width:100%;max-width:480px;z-index:70;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;padding:0 14px}
+.toast{max-width:100%;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:900;color:#fff;text-align:center;line-height:1.25;box-shadow:0 4px 0 rgba(0,0,0,.25),0 8px 16px rgba(0,0,0,.3);animation:toastin .3s cubic-bezier(.3,1.5,.5,1);border:2px solid rgba(255,255,255,.55)}
+.toast.info{background:linear-gradient(#6a86a0,#4c667f)}
+.toast.good{background:linear-gradient(#72c64a,#3f9726)}
+.toast.bad{background:linear-gradient(#ef6a52,#c93a28)}
+.toast.neutral{background:linear-gradient(#6a86a0,#4c667f)}
+.toast.out{opacity:0;transform:translateY(-10px) scale(.95);transition:all .3s}
+@keyframes toastin{from{opacity:0;transform:translateY(-14px) scale(.85)}}
+
+/* ===== sheet ===== */
+#sheet-wrap{position:fixed;inset:0;z-index:60;background:rgba(40,22,5,0);transition:background .22s;display:flex;align-items:flex-end;justify-content:center}
+#sheet-wrap.open{background:rgba(40,22,5,.5)}
+#sheet{width:100%;max-width:480px;max-height:84vh;max-height:84dvh;display:flex;flex-direction:column;background:linear-gradient(#fffaf0,#fff0cc);border-radius:26px 26px 0 0;border:3px solid #d9b46a;border-bottom:0;
+  box-shadow:0 -8px 30px rgba(30,15,0,.45);transform:translateY(105%);transition:transform .25s cubic-bezier(.2,.9,.3,1);padding-bottom:var(--sab)}
+#sheet-wrap.open #sheet{transform:none}
+.grab{width:46px;height:5px;border-radius:3px;background:#d9c08a;margin:8px auto 2px;flex:none}
+#sheet-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 14px 16px}
+.sh-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 10px}
+.sh-head h3{margin:0;font-size:19px;font-weight:900}
+.sh-head small{display:block;font-size:11px;color:var(--ink2);font-weight:800}
+.sh-x{width:44px;height:44px;border-radius:14px;background:#f1e3c3;font-size:18px;font-weight:900;box-shadow:0 3px 0 #bfa56c;flex:none}
+.hscroll{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 12px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.hscroll::-webkit-scrollbar{display:none}
+.seed{flex:none;width:128px;scroll-snap-align:start;border-radius:20px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;
+  background:linear-gradient(#fffdf5,#ffeec2);border:3px solid #e0bd72;box-shadow:var(--card-sh);min-height:44px}
+.seed:active{transform:scale(.96)}
+.seed.last{border-color:#6fae3a;box-shadow:var(--card-sh),0 0 0 3px rgba(111,174,58,.35)}
+.seed-e{font-size:42px;line-height:1.1}.seed-n{font-size:14px;font-weight:900}
+.seed-r{display:flex;flex-direction:column;gap:2px;font-size:11px;font-weight:800;color:var(--ink2)}
+.seed .badge2{font-size:10px;font-weight:900;border-radius:10px;padding:3px 7px;margin-top:2px}
+.badge2.in{background:#d6f2b8;color:#2e5a14}.badge2.off{background:#ffe0a8;color:#8a4a06}.badge2.lock{background:#ddd2bd;color:#6b5a3d}
+.seed.locked{filter:grayscale(1);opacity:.55}
+.seed.poor .cost{color:var(--red-d)}
+.sheet-foot{display:flex;flex-direction:column;gap:8px;margin-top:2px}
+.toggle{min-height:44px;border-radius:14px;background:#f6ecd0;border:2px solid #e0c98c;font-size:13px;font-weight:900;padding:0 12px;text-align:left}
+.toggle.on{background:#d6f2b8;border-color:#6fae3a;color:#2e5a14}
+.rec{display:flex;gap:10px;align-items:center;background:#fffdf6;border:2px solid #e8d29b;border-radius:18px;padding:10px;margin-bottom:9px;box-shadow:0 3px 0 rgba(150,110,40,.2)}
+.rec.locked{opacity:.55;filter:grayscale(.8)}
+.rec .re{font-size:34px;line-height:1}
+.rec .rm{flex:1;min-width:0}.rec .rm b{display:block;font-size:14px;font-weight:900}
+.rec .rm small{font-size:11px;color:var(--ink2);font-weight:800}
+.needs{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.need{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:900;border-radius:10px;padding:2px 7px}
+.need.ok{background:#d6f2b8;color:#2e5a14}.need.no{background:#ffd5cc;color:var(--red-d)}.need.plain{background:#f1e6c8;color:var(--ink2)}
+.qrow{display:flex;gap:10px;align-items:center;background:#f6ecd0;border-radius:16px;padding:8px 10px;margin-bottom:8px}
+.qrow .qe{font-size:28px}.qrow .qm{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.qrow .qm b{font-size:13px}
+.qrow.done{background:#dff0c8}
+.sub{font-size:13px;font-weight:900;margin:12px 2px 7px;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px}
+.det-banner{border-radius:20px;padding:14px;text-align:center;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.det-banner.good{background:linear-gradient(135deg,#79c94c,#e6b73a)}.det-banner.bad{background:linear-gradient(135deg,#d9482f,#f08a2c)}.det-banner.neutral{background:linear-gradient(135deg,#7a95b0,#a9c0d4)}
+.det-banner .big{font-size:54px;line-height:1.1}
+.det-banner h3{margin:2px 0 0;font-size:20px}
+.modlist{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.modlist li{background:#f6ecd0;border-radius:12px;padding:8px 12px;font-size:13px;font-weight:800}
+
+/* ===== orders ===== */
+.orders{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
+.order{position:relative;border-radius:20px;padding:10px;display:flex;flex-direction:column;gap:8px;background:linear-gradient(180deg,var(--paper),#ffeec8);border:3px solid #e0bd72;box-shadow:var(--card-sh)}
+.order.can{border-color:#6fae3a}
+.order.express{background:linear-gradient(180deg,#fff7d9,#ffe08a);border-color:#e59a1b}
+.o-head{display:flex;align-items:center;gap:8px;min-width:0}
+.o-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(#cfe9ff,#8cc3ee);display:grid;place-items:center;font-size:25px;flex:none;box-shadow:inset 0 -3px 0 rgba(0,0,0,.12)}
+.o-who{min-width:0}.o-who b{display:block;font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.o-who small{font-size:10.5px;color:var(--ink2);font-weight:800;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.o-exp{position:absolute;top:-9px;right:8px;background:linear-gradient(#ff9a3d,#e8601a);color:#fff;border-radius:12px;padding:2px 9px;font-size:11px;font-weight:900;box-shadow:0 3px 0 #a8420c;text-shadow:0 1px 0 rgba(0,0,0,.3)}
+.o-items{display:flex;flex-wrap:wrap;gap:5px;flex:1;align-content:flex-start}
+.o-items .need{font-size:12px;padding:3px 8px}
+.o-rew{display:flex;gap:10px;font-size:13px;font-weight:900}
+.o-foot{display:flex;gap:6px;align-items:center}.o-foot .btn{flex:1}
+.order.cool{align-items:center;justify-content:center;text-align:center;min-height:150px;background:repeating-linear-gradient(45deg,rgba(255,255,255,.35) 0 10px,transparent 10px 20px),linear-gradient(#efe3c3,#dfcfa3);border-style:dashed;box-shadow:none}
+.truck{font-size:44px;animation:drive 2.2s ease-in-out infinite}
+@keyframes drive{0%,100%{transform:translateX(-8px)}50%{transform:translateX(8px)}}
+.order.cool b{font-size:13px}.order.cool small{font-size:12px;color:var(--ink2)}
+
+/* ===== shop ===== */
+.seg{display:flex;gap:5px;background:rgba(255,246,220,.95);padding:5px;border-radius:20px;box-shadow:var(--card-sh);margin-bottom:12px}
+.seg button{flex:1;min-height:44px;border-radius:15px;font-size:11px;font-weight:900;color:var(--ink2);line-height:1.15;padding:2px}
+.seg button.on{background:linear-gradient(#ffd45e,#f2a91c);color:#5a3306;box-shadow:0 3px 0 var(--gold-d)}
+.shop-list{display:flex;flex-direction:column;gap:10px}
+.shop-card{display:flex;gap:10px;align-items:center;border-radius:20px;padding:10px 10px 10px 12px;background:linear-gradient(180deg,var(--paper),#ffeec8);border:3px solid #e0bd72;box-shadow:var(--card-sh)}
+.shop-card.locked{filter:grayscale(.9);opacity:.7}
+.sc-e{font-size:40px;line-height:1;flex:none;width:48px;text-align:center}
+.sc-m{flex:1;min-width:0}.sc-m b{display:block;font-size:15px;font-weight:900}
+.sc-m small{display:block;font-size:11px;font-weight:700;color:var(--ink2);line-height:1.25;margin-top:1px}
+.sc-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.tag{font-size:10px;font-weight:900;background:#f1e6c8;color:var(--ink2);border-radius:9px;padding:2px 7px}
+.sc-act{flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:76px}
+.owned{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:76px;border-radius:14px;background:#d6f2b8;color:#2e5a14;font-weight:900;font-size:13px;padding:0 8px;text-align:center}
+.lockpill{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:76px;border-radius:14px;background:#ddd2bd;color:#6b5a3d;font-weight:900;font-size:13px;padding:0 8px;text-align:center}
+
+/* ===== barn ===== */
+.capbar{display:flex;align-items:center;gap:10px;background:rgba(255,246,220,.96);border-radius:18px;padding:10px 12px;box-shadow:var(--card-sh);margin-bottom:12px}
+.capfill{flex:1;height:16px;border-radius:9px;background:#e3cf9c;overflow:hidden;box-shadow:inset 0 2px 3px rgba(90,50,10,.3)}
+.capfill i{display:block;height:100%;width:0;background:linear-gradient(#8bdc66,#4fa52f);border-radius:9px;transition:width .4s}
+.capfill i.warn{background:linear-gradient(#ffc45e,#f08a1c)}.capfill i.full{background:linear-gradient(#f2705f,#d2402f)}
+.capbar span{font-size:13px;font-weight:900;white-space:nowrap}
+.barn-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.item{border-radius:20px;padding:10px;display:flex;flex-direction:column;gap:6px;background:linear-gradient(180deg,var(--paper),#ffeec8);border:3px solid #e0bd72;box-shadow:var(--card-sh)}
+.it-top{display:flex;align-items:center;gap:8px}
+.it-e{font-size:34px;line-height:1;position:relative}
+.it-q{position:absolute;right:-8px;bottom:-4px;background:#5b3b1c;color:#ffe9b3;font-size:11px;font-weight:900;border-radius:10px;padding:1px 6px}
+.it-m{min-width:0;flex:1}.it-m b{display:block;font-size:13px;font-weight:900;line-height:1.15}
+.it-p{font-size:12px;font-weight:900;display:flex;align-items:center;gap:4px;margin-top:2px}
+.tr-up{color:#2f8a1a}.tr-down{color:var(--red-d)}.tr-flat{color:#8a7a5a}
+.it-btns{display:flex;gap:6px}.it-btns .btn{flex:1;padding:0 6px;font-size:13px}
+
+/* ===== almanac ===== */
+.profile{background:linear-gradient(180deg,var(--paper),#ffeec8);border:3px solid #e0bd72;border-radius:22px;padding:12px;box-shadow:var(--card-sh);display:flex;flex-direction:column;gap:10px;margin-bottom:6px}
+.pf-head{display:flex;align-items:center;gap:10px;font-size:16px}.pf-av{font-size:34px;line-height:1;width:52px;height:52px;border-radius:50%;background:linear-gradient(#cfe9ff,#8cc3ee);display:grid;place-items:center}
+.avatars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.avatars button{min-height:48px;font-size:28px;border-radius:16px;background:#f6ecd0;border:3px solid transparent}
+.avatars button.on{background:#d6f2b8;border-color:#6fae3a;box-shadow:0 0 0 3px rgba(111,174,58,.25)}
+.profile label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:900;color:var(--ink2);text-transform:uppercase;letter-spacing:.4px}
+.profile input,.name-in{min-height:46px;border-radius:14px;border:3px solid #e0bd72;background:#fff;padding:0 12px;font-size:16px;font-weight:800;color:var(--ink);outline:none;width:100%}
+.profile input:focus,.name-in:focus{border-color:#6fae3a;box-shadow:0 0 0 3px rgba(111,174,58,.25)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.stat{background:linear-gradient(180deg,var(--paper),#ffeec8);border:3px solid #e0bd72;border-radius:18px;padding:8px 4px;text-align:center;box-shadow:0 3px 0 rgba(110,70,20,.25)}
+.stat i{font-style:normal;font-size:22px;display:block}.stat b{font-size:16px;display:block;font-weight:900}.stat small{font-size:10px;font-weight:800;color:var(--ink2)}
+.loglist{display:flex;flex-direction:column;gap:8px}
+.log{display:flex;gap:10px;align-items:flex-start;border-radius:16px;padding:9px 12px;border:2px solid;box-shadow:0 3px 0 rgba(0,0,0,.12)}
+.log i{font-style:normal;font-size:28px;line-height:1.1}.log div{flex:1;min-width:0}.log b{display:block;font-size:13px}.log small{display:block;font-size:11.5px;font-weight:700;line-height:1.3;margin-top:2px}
+.log time{font-size:10px;font-weight:900;opacity:.7;white-space:nowrap}
+.log.good{background:#e6f8cf;border-color:#8bc95a;color:#2e5a14}.log.bad{background:#ffe3d3;border-color:#e58a5e;color:#7d2410}.log.neutral{background:#f6ecd0;border-color:#e0c98c}
+.regions{display:grid;grid-template-columns:1fr;gap:8px}
+.region{display:flex;gap:10px;align-items:center;background:linear-gradient(180deg,var(--paper),#ffeec8);border:3px solid #e0bd72;border-radius:18px;padding:9px 12px;box-shadow:0 3px 0 rgba(110,70,20,.25)}
+.region i{font-style:normal;font-size:30px}.region b{display:block;font-size:14px}.region small{font-size:11.5px;font-weight:700;color:var(--ink2);line-height:1.3;display:block}
+.reset-wrap{text-align:center;margin:24px 0 8px}
+
+/* ===== modals ===== */
+#modal-root{position:fixed;inset:0;z-index:80}
+.modal-bg{position:absolute;inset:0;background:rgba(30,15,0,.62);display:flex;align-items:center;justify-content:center;padding:18px;animation:fadein .25s;overflow-y:auto}
+.mwrap{width:100%;max-width:440px;margin:auto}
+.mcard{position:relative;border-radius:28px;padding:22px 18px 18px;text-align:center;color:var(--ink);background:linear-gradient(#fffaf0,#ffeec8);border:4px solid #e0bd72;box-shadow:0 8px 0 rgba(90,55,15,.35),0 20px 40px rgba(0,0,0,.5);animation:pop .45s cubic-bezier(.2,1.4,.4,1);overflow:hidden}
+@keyframes pop{from{transform:scale(.6) translateY(30px);opacity:0}}
+.mcard h2{margin:6px 0 6px;font-size:24px;font-weight:900;line-height:1.1}
+.mcard p{margin:0 0 12px;font-size:14px;line-height:1.4;font-weight:700}
+.mcard .btn{width:100%;margin-top:8px}
+.ev.bad{background:radial-gradient(circle at 50% 0,#ff9a3d 0,transparent 60%),linear-gradient(160deg,#6a2a2a,#c2412a 60%,#f08a2c);color:#fff;border-color:#ffb27a;text-shadow:0 2px 0 rgba(60,10,0,.55)}
+.ev.good{background:radial-gradient(circle at 50% 0,#fff3a0 0,transparent 60%),linear-gradient(160deg,#4fa83a,#98cf45 55%,#f6c944);color:#fff;border-color:#fff0a8;text-shadow:0 2px 0 rgba(30,70,10,.5)}
+.ev.neutral{background:linear-gradient(160deg,#5f7d9a,#93b2cc);color:#fff;border-color:#d6e6f2;text-shadow:0 2px 0 rgba(0,0,0,.3)}
+.ev .ev-emoji{font-size:84px;line-height:1.05;filter:drop-shadow(0 6px 6px rgba(0,0,0,.35));animation:evbob 1.6s ease-in-out infinite}
+.ev.bad .ev-emoji{animation:evshake .5s 2,evbob 1.6s ease-in-out 1s infinite}
+@keyframes evbob{50%{transform:translateY(-6px) scale(1.06)}}
+@keyframes evshake{25%{transform:translateX(-8px) rotate(-5deg)}75%{transform:translateX(8px) rotate(5deg)}}
+.ev-kind{display:inline-block;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:900;background:rgba(0,0,0,.28);border-radius:12px;padding:3px 12px}
+.ev-mods{list-style:none;padding:0;margin:0 0 12px;display:flex;flex-direction:column;gap:5px}
+.ev-mods li{background:rgba(0,0,0,.25);border-radius:12px;padding:6px 10px;font-size:12.5px;font-weight:800;text-shadow:none}
+.ev-timer{display:inline-block;margin:0 0 10px;font-size:12px;background:rgba(0,0,0,.3);border-radius:12px;padding:3px 12px}
+.choice{display:flex;flex-direction:column;align-items:flex-start;text-align:left;width:100%;min-height:52px;border-radius:18px;padding:9px 14px;margin-top:8px;color:var(--ink);text-shadow:none;
+  background:linear-gradient(#fffdf5,#ffe9b3);box-shadow:0 4px 0 #b98d3a,0 8px 12px rgba(0,0,0,.25);border:2px solid #fff3c9}
+.choice:active{transform:translateY(3px);box-shadow:0 1px 0 #b98d3a}
+.choice b{font-size:15px;font-weight:900}.choice small{font-size:11.5px;font-weight:700;color:var(--ink2);line-height:1.25}
+.choice .cost{margin-top:3px;font-size:12px;font-weight:900;background:#ffe07a;border-radius:10px;padding:1px 9px}
+.choice.poor{opacity:.75}.choice.poor .cost{background:#ffc9bf;color:var(--red-d)}
+.choice.off{filter:grayscale(.8);opacity:.6}
+.ok-btn{background:linear-gradient(#fffdf5,#ffe9b3)!important;color:var(--ink)!important;text-shadow:none!important;box-shadow:0 4px 0 #b98d3a,0 8px 12px rgba(0,0,0,.25)!important}
+.lvl-card{background:radial-gradient(circle at 50% 0,#fff3a0 0,transparent 55%),linear-gradient(#fffaf0,#ffeec8)}
+.lvl-big{font-size:64px;line-height:1;animation:evbob 1.4s ease-in-out infinite;filter:drop-shadow(0 4px 4px rgba(150,90,0,.4))}
+.lvl-card .num{font-size:44px;font-weight:900;color:#e08a10;text-shadow:0 3px 0 #a85d0a;line-height:1}
+.unlocks{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0 6px}
+.unlocks span{background:#d6f2b8;color:#2e5a14;border-radius:14px;padding:5px 11px;font-size:13px;font-weight:900}
+.wel-av{font-size:64px;line-height:1.1}
+.tips{list-style:none;margin:10px 0 12px;padding:0;text-align:left;display:flex;flex-direction:column;gap:7px}
+.tips li{display:flex;gap:10px;align-items:flex-start;background:#f6ecd0;border-radius:14px;padding:8px 10px;font-size:13px;line-height:1.3;font-weight:800}
+.tips li i{font-style:normal;font-size:22px;line-height:1}
+.name-lbl{display:block;text-align:left;font-size:13px;font-weight:900;margin:4px 2px 5px}
+
+/* ===== fx layers ===== */
+#fx{position:fixed;inset:0;z-index:35;pointer-events:none;max-width:480px;margin:0 auto;overflow:hidden}
+.fx .l{position:absolute;inset:0;opacity:0;transition:opacity 1.2s;display:block;overflow:hidden}
+.fx.dust .l-dust,.fx.smoke .l-smoke,.fx.heat .l-heat,.fx.frost .l-frost,.fx.rain .l-rain,.fx.hail .l-hail,.fx.snow .l-snow{opacity:.75}.fx.sun .l-sun{opacity:.45}
+.l-dust{background:radial-gradient(60% 24% at 20% 35%,rgba(214,170,110,.6),transparent),radial-gradient(55% 22% at 80% 68%,rgba(190,140,80,.55),transparent),linear-gradient(rgba(190,145,85,.38),rgba(160,110,55,.5));background-size:220% 100%,220% 100%,100% 100%;animation:dustmove 7s linear infinite}
+@keyframes dustmove{to{background-position:-220% 0,220% 0,0 0}}
+.l-smoke{background:radial-gradient(ellipse at 50% 112%,rgba(255,90,20,.42),transparent 55%),linear-gradient(rgba(80,62,56,.55),rgba(200,120,60,.34));animation:flicker 2.4s ease-in-out infinite}
+@keyframes flicker{0%,100%{filter:brightness(1)}40%{filter:brightness(1.18)}70%{filter:brightness(.92)}}
+.l-heat{background:radial-gradient(ellipse at 50% 115%,rgba(255,140,0,.45),transparent 60%),linear-gradient(rgba(255,200,80,.2),rgba(255,120,30,.1));animation:heat 3s ease-in-out infinite}
+@keyframes heat{50%{opacity:.75}}
+.l-frost{background:radial-gradient(ellipse at center,transparent 45%,rgba(205,236,255,.55) 100%),linear-gradient(rgba(190,225,255,.18),rgba(190,225,255,.1))}
+.l-frost b{position:absolute;color:#fff;font-weight:400;text-shadow:0 0 8px #bfe6ff,0 0 14px #7fc4ff;animation:twinkle 2s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.1;transform:scale(.6)}50%{opacity:1;transform:scale(1.2)}}
+.l-rain{background:linear-gradient(rgba(70,90,120,.3),rgba(60,80,110,.22))}
+.l-rain i{position:absolute;top:-6%;width:2px;height:24px;background:linear-gradient(rgba(215,232,255,0),rgba(215,232,255,.85));animation:rainfall linear infinite}
+@keyframes rainfall{from{transform:translate(0,0)}to{transform:translate(-36px,112vh)}}
+.l-hail{background:linear-gradient(rgba(60,70,90,.4),rgba(90,100,120,.25))}
+.l-hail i{position:absolute;top:-4%;width:7px;height:7px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#cfe3f5);animation:hailfall linear infinite;box-shadow:0 0 3px rgba(255,255,255,.7)}
+@keyframes hailfall{from{transform:translate(0,0)}to{transform:translate(-50px,110vh)}}
+.l-snow{background:linear-gradient(rgba(190,210,235,.22),rgba(220,235,250,.2))}
+.l-snow i{position:absolute;top:-4%;width:7px;height:7px;border-radius:50%;background:#fff;opacity:.9;animation:snowfall linear infinite}
+@keyframes snowfall{from{transform:translate(0,0)}50%{transform:translate(18px,55vh)}to{transform:translate(-8px,110vh)}}
+.l-sun{background:radial-gradient(circle at 92% 0,rgba(255,236,130,.6),transparent 55%)}
+.l-sun::before{content:"";position:absolute;right:-70%;top:-70%;width:170%;height:170%;background:repeating-conic-gradient(rgba(255,240,150,.3) 0 7deg,transparent 7deg 18deg);
+  -webkit-mask-image:radial-gradient(circle,#000,transparent 68%);mask-image:radial-gradient(circle,#000,transparent 68%);animation:spin 70s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#app.shake{animation:appshake .5s}
+@keyframes appshake{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+
+/* ===== floaters / confetti ===== */
+#float-layer,#confetti{position:fixed;inset:0;pointer-events:none;z-index:90;overflow:hidden}
+#confetti{z-index:95}
+.fly{position:absolute;font-size:20px;font-weight:900;color:#fff;white-space:nowrap;text-shadow:0 2px 0 rgba(60,30,0,.8),0 0 6px rgba(0,0,0,.4);opacity:0;will-change:transform,opacity}
+.fly.coin{color:#ffe36a}
+.cf{position:absolute;top:0;width:10px;height:14px;border-radius:2px;will-change:transform}
+
+@media (min-width:481px){#hud{border-radius:0 0 22px 22px}}
+@media (max-width:360px){
+  .sec h2{font-size:15px}.plot .pe{font-size:32px}.seed{width:116px}.hud-pills{gap:5px}.pill{font-size:13px;padding:0 6px 0 4px}
+  .logo span{font-size:22px}.tab span{font-size:10px}.chip{font-size:11px;padding:0 8px}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+</style>
+</head>
+<body>
+<div id="app" data-season="spring" data-tab="farm">
+
+  <!-- ===== Scenery: sky, Palouse hills, barn & grain elevator ===== -->
+  <div id="scene" aria-hidden="true">
+    <div class="sky-pad"></div>
+    <div id="stars"></div>
+    <div id="orb">☀️</div>
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="cloud c3"></div>
+    <svg id="hills" viewBox="0 0 480 240" preserveAspectRatio="xMidYMin slice" xmlns="http://www.w3.org/2000/svg">
+      <!-- far ridge -->
+      <path class="h1" d="M0 122 C60 92 120 102 182 116 S300 96 362 108 S440 100 480 106 V240 H0Z"/>
+      <!-- wind turbines -->
+      <g stroke="#f4f4f0" stroke-width="1.3" stroke-linecap="round" opacity=".9">
+        <path d="M262 106 V84 M262 84 L262 74 M262 84 L269.5 88 M262 84 L255 88.5"/>
+        <path d="M418 104 V86 M418 86 L418 78 M418 86 L424 89.5 M418 86 L412.5 89.5"/>
+      </g>
+      <!-- grain elevator -->
+      <g transform="translate(92,56)">
+        <rect x="0" y="27" width="10" height="40" fill="#e9e1d0"/><ellipse cx="5" cy="27" rx="5" ry="2" fill="#f8f3e6"/><rect x="6.5" y="27" width="3.5" height="40" fill="#c6bba3" opacity=".65"/>
+        <rect x="11" y="27" width="10" height="40" fill="#ece5d5"/><ellipse cx="16" cy="27" rx="5" ry="2" fill="#f8f3e6"/><rect x="17.5" y="27" width="3.5" height="40" fill="#c6bba3" opacity=".65"/>
+        <rect x="22" y="27" width="10" height="40" fill="#e9e1d0"/><ellipse cx="27" cy="27" rx="5" ry="2" fill="#f8f3e6"/><rect x="28.5" y="27" width="3.5" height="40" fill="#c6bba3" opacity=".65"/>
+        <rect x="33" y="27" width="10" height="40" fill="#ece5d5"/><ellipse cx="38" cy="27" rx="5" ry="2" fill="#f8f3e6"/><rect x="39.5" y="27" width="3.5" height="40" fill="#c6bba3" opacity=".65"/>
+        <rect x="9" y="6" width="17" height="23" fill="#f0e9da"/>
+        <path d="M7 6 L17.5 -1 L28 6Z" fill="#8e8470"/>
+        <rect x="14" y="12" width="7" height="6" fill="#8e8470" opacity=".75"/>
+        <path d="M26 12 L60 31" stroke="#8b8270" stroke-width="2"/>
+        <rect x="48" y="50" width="24" height="17" fill="#d9d0bc"/><path d="M46 50 L60 43 L74 50Z" fill="#8e8470"/>
+      </g>
+      <!-- mid hill: wheat gold -->
+      <path class="h2" d="M0 142 C70 112 140 122 212 138 S330 118 402 126 S462 122 480 124 V240 H0Z"/>
+      <path d="M0 150 C74 124 140 134 214 148 S336 130 404 138 S462 134 480 136" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="1.6"/>
+      <path d="M0 160 C74 136 142 146 216 160 S338 142 406 150 S464 146 480 148" fill="none" stroke="rgba(120,70,20,.16)" stroke-width="1.6"/>
+      <!-- red barn + silo -->
+      <g transform="translate(330,88)">
+        <path d="M0 40 V16 L9 5 H47 L56 16 V40Z" fill="#b83a2d"/>
+        <path d="M-3 17 L8 3 H48 L59 17 L56 17 L47 6 H9 L0 17Z" fill="#6f251c"/>
+        <rect x="19" y="21" width="18" height="19" fill="#8f2c22"/>
+        <path d="M19 21 L37 40 M37 21 L19 40" stroke="#f3e7cf" stroke-width="1.6"/>
+        <rect x="19" y="21" width="18" height="19" fill="none" stroke="#f3e7cf" stroke-width="1.6"/>
+        <rect x="24" y="9" width="8" height="6" fill="#f3e7cf"/>
+        <rect x="58" y="14" width="9" height="26" fill="#cfd6d9"/><path d="M58 14 a4.5 4 0 0 1 9 0Z" fill="#98a4ab"/>
+      </g>
+      <!-- near hill: sage -->
+      <path class="h3" d="M0 172 C80 152 152 162 232 176 S382 160 480 152 V240 H0Z"/>
+      <path d="M0 184 C84 166 156 176 236 190 S384 174 480 166" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="1.6"/>
+      <path d="M0 196 C90 180 160 190 240 202 S390 188 480 180" fill="none" stroke="rgba(60,40,10,.13)" stroke-width="1.6"/>
+      <!-- fence -->
+      <g stroke="#6b4a26" stroke-width="1.6" opacity=".55" stroke-linecap="round">
+        <path d="M14 196 V184 M40 193 V181 M66 191 V179 M92 191 V179 M118 193 V181"/>
+        <path d="M12 187 H120 M12 192 H120"/>
+      </g>
+      <!-- foreground -->
+      <path class="h4" d="M0 214 C100 198 200 212 300 206 S440 198 480 204 V240 H0Z"/>
+    </svg>
+    <div id="ground"></div>
+    <div id="shade"></div>
+  </div>
+
+  <!-- ===== HUD ===== -->
+  <header id="hud">
+    <div class="hud-top">
+      <div class="who" id="hud-who"><span class="who-av" id="hud-av">🧑‍🌾</span><span class="who-txt" id="hud-who-txt">Farmer</span></div>
+      <div class="chip season" id="hud-season">🌱 Spring · Day 1</div>
+    </div>
+    <div class="hud-row">
+      <div class="lvl" id="hud-level" aria-label="Level">
+        <div class="ring" id="hud-ring"><span id="hud-lvl-num">1</span></div>
+        <em>LV</em>
+      </div>
+      <div class="hud-col">
+        <div class="hud-pills">
+          <div class="pill coins" id="hud-coins-pill"><span class="ico">🪙</span><b id="hud-coins">0</b></div>
+          <div class="pill barn" id="hud-barn-pill"><span class="ico">🏚️</span><b id="hud-barn">0/0</b></div>
+        </div>
+        <div class="xpbar"><i id="hud-xpbar"></i><span id="hud-xp">0/20 XP</span></div>
+      </div>
+    </div>
+    <div id="event-strip" class="strip" hidden></div>
+  </header>
+
+  <!-- ===== Views ===== -->
+  <main id="views">
+    <section class="view" id="view-farm" data-view="farm">
+      <div class="skyline-gap"><div class="logo"><span>Kellyville</span><small>Eastern Washington</small></div></div>
+      <div class="sec"><h2>🌾 Fields</h2><span class="sec-info" id="field-info"></span></div>
+      <div class="plots" id="plots"></div>
+      <div class="sec"><h2>🐔 Animal pens</h2><span class="sec-info" id="pen-info"></span></div>
+      <div class="pens" id="pens"></div>
+      <div class="sec"><h2>🏭 Buildings</h2><span class="sec-info" id="bld-info"></span></div>
+      <div class="blds" id="blds"></div>
+    </section>
+
+    <section class="view" id="view-orders" data-view="orders" hidden>
+      <div class="sec"><h2>📋 Truck Orders</h2><span class="sec-info" id="orders-info"></span></div>
+      <div class="orders" id="orders-grid"></div>
+    </section>
+
+    <section class="view" id="view-shop" data-view="shop" hidden>
+      <div class="sec"><h2>🏪 Farm Shop</h2><span class="sec-info" id="shop-info"></span></div>
+      <div class="seg" id="shop-seg">
+        <button data-act="shoptab" data-v="animals">🐄 Animals</button>
+        <button data-act="shoptab" data-v="buildings">🏭 Buildings</button>
+        <button data-act="shoptab" data-v="upgrades">⚙️ Upgrades</button>
+        <button data-act="shoptab" data-v="land">🟫 Land</button>
+      </div>
+      <div class="shop-list" id="shop-list"></div>
+    </section>
+
+    <section class="view" id="view-barn" data-view="barn" hidden>
+      <div class="sec"><h2>🏚️ The Barn</h2><span class="sec-info" id="barn-info"></span></div>
+      <div class="capbar"><div class="capfill"><i id="barn-fill"></i></div><span id="barn-cap-txt"></span></div>
+      <div class="barn-grid" id="barn-grid"></div>
+    </section>
+
+    <section class="view" id="view-almanac" data-view="almanac" hidden>
+      <div class="sec"><h2>📰 Palouse Almanac</h2><span class="sec-info" id="alm-info"></span></div>
+      <div class="profile" id="alm-profile">
+        <div class="pf-head"><span class="pf-av" id="pf-av">🧑‍🌾</span><b>Your profile</b></div>
+        <div class="avatars" id="pf-avatars">
+          <button data-act="avatar" data-v="🧑‍🌾">🧑‍🌾</button><button data-act="avatar" data-v="👩‍🌾">👩‍🌾</button>
+          <button data-act="avatar" data-v="👨‍🌾">👨‍🌾</button><button data-act="avatar" data-v="🤠">🤠</button>
+          <button data-act="avatar" data-v="👵">👵</button><button data-act="avatar" data-v="👴">👴</button>
+          <button data-act="avatar" data-v="🧒">🧒</button><button data-act="avatar" data-v="🐕">🐕</button>
+        </div>
+        <label>Farmer name<input id="pf-name" maxlength="20" autocomplete="off" placeholder="Your name"></label>
+        <label>Farm name<input id="pf-farm" maxlength="28" autocomplete="off" placeholder="Farm name"></label>
+        <button class="btn btn-green" data-act="saveprofile">Save</button>
+      </div>
+      <div class="stats" id="alm-stats"></div>
+      <div class="sec"><h2>⚡ Event log</h2></div>
+      <div class="loglist" id="alm-log"></div>
+      <div class="sec"><h2>🗺️ Region guide</h2></div>
+      <div class="regions" id="alm-regions"></div>
+      <div class="reset-wrap"><button class="btn btn-red" data-act="reset">🗑️ Reset farm</button></div>
+    </section>
+  </main>
+
+  <!-- ===== Floating bits ===== -->
+  <div class="dock fab-dock"><button id="fab-harvest" class="fab" data-act="harvestall" hidden>🧺 Harvest all <b id="fab-n"></b></button></div>
+
+  <nav id="tabbar" class="dock">
+    <button class="tab on" data-act="tab" data-tab="farm"><i>🌾</i><span>Farm</span></button>
+    <button class="tab" data-act="tab" data-tab="orders"><i>📋</i><span>Orders</span><em class="badge" id="badge-orders" hidden></em></button>
+    <button class="tab" data-act="tab" data-tab="shop"><i>🏪</i><span>Shop</span></button>
+    <button class="tab" data-act="tab" data-tab="barn"><i>🏚️</i><span>Barn</span><em class="badge warn" id="badge-barn" hidden>!</em></button>
+    <button class="tab" data-act="tab" data-tab="almanac"><i>📰</i><span>Almanac</span></button>
+  </nav>
+
+  <div id="toasts"></div>
+
+  <div id="sheet-wrap" data-act="sheet-bg" hidden>
+    <div id="sheet" role="dialog"><div class="grab"></div><div id="sheet-body"></div></div>
+  </div>
+
+  <div id="modal-root" hidden></div>
+  <div id="float-layer"></div>
+  <div id="confetti"></div>
+</div>
+
+<!-- weather / event atmosphere overlay -->
+<div id="fx" class="fx" aria-hidden="true">
+  <i class="l l-dust"></i><i class="l l-smoke"></i><i class="l l-heat"></i><i class="l l-frost"></i>
+  <i class="l l-rain"></i><i class="l l-hail"></i><i class="l l-snow"></i><i class="l l-sun"></i>
+</div>
+
+<script>/* ---- core.js ---- */
+/* core.js — Kellyville engine. Owns state, time, inventory, actions.
+   Load order: core.js -> data.js -> events.js -> economy.js -> ui.js -> boot (in core, on DOMContentLoaded) */
+(function () {
+  'use strict';
+  const G = (window.G = window.G || {});
+  G.DATA = G.DATA || { crops: {}, products: {}, animals: {}, buildings: {}, expansions: {} };
+
+  // ---------- event bus ----------
+  const handlers = {};
+  G.bus = {
+    on(name, fn) { (handlers[name] = handlers[name] || []).push(fn); },
+    emit(name, payload) { (handlers[name] || []).forEach(fn => { try { fn(payload); } catch (e) { console.error('[bus]', name, e); } }); }
+  };
+
+  // ---------- utils ----------
+  G.util = {
+    now: () => Date.now(),
+    rand: (a, b) => a + Math.random() * (b - a),
+    randInt: (a, b) => Math.floor(a + Math.random() * (b - a + 1)),
+    pick: arr => arr[Math.floor(Math.random() * arr.length)],
+    weightedPick(items, weightFn) {
+      const total = items.reduce((s, i) => s + Math.max(0, weightFn(i)), 0);
+      if (total <= 0) return null;
+      let r = Math.random() * total;
+      for (const i of items) { r -= Math.max(0, weightFn(i)); if (r <= 0) return i; }
+      return items[items.length - 1];
+    },
+    fmtTime(sec) {
+      sec = Math.max(0, Math.ceil(sec));
+      if (sec < 60) return sec + 's';
+      if (sec < 3600) return Math.floor(sec / 60) + 'm ' + (sec % 60 ? (sec % 60) + 's' : '');
+      return Math.floor(sec / 3600) + 'h ' + Math.floor((sec % 3600) / 60) + 'm';
+    },
+    clamp: (v, a, b) => Math.max(a, Math.min(b, v)),
+    uid: () => Math.random().toString(36).slice(2, 9)
+  };
+
+  // ---------- calendar ----------
+  // One in-game day = DAY_SEC real seconds. 7 days per season. 4 seasons per year.
+  G.DAY_SEC = 90;
+  G.DAYS_PER_SEASON = 7;
+  G.SEASONS = ['spring', 'summer', 'fall', 'winter'];
+  G.SEASON_INFO = {
+    spring: { name: 'Spring', emoji: '🌱' }, summer: { name: 'Summer', emoji: '☀️' },
+    fall: { name: 'Fall', emoji: '🍂' }, winter: { name: 'Winter', emoji: '❄️' }
+  };
+  G.calendar = function () {
+    const elapsed = (G.util.now() - G.state.startedAt) / 1000;
+    const dayIndex = Math.floor(elapsed / G.DAY_SEC);
+    const seasonIndex = Math.floor(dayIndex / G.DAYS_PER_SEASON) % 4;
+    return {
+      day: dayIndex + 1,
+      dayOfSeason: (dayIndex % G.DAYS_PER_SEASON) + 1,
+      season: G.SEASONS[seasonIndex],
+      year: Math.floor(dayIndex / (G.DAYS_PER_SEASON * 4)) + 1,
+      dayProgress: (elapsed % G.DAY_SEC) / G.DAY_SEC
+    };
+  };
+
+  // ---------- levels ----------
+  G.xpForLevel = lvl => Math.floor(20 * Math.pow(lvl, 1.6)); // xp needed to go from lvl -> lvl+1
+
+  // ---------- state ----------
+  const SAVE_KEY = 'palouse-harvest-v1';
+  function newState() {
+    const now = G.util.now();
+    return {
+      version: 1, startedAt: now, lastTick: now,
+      farmName: 'Palouse Homestead',
+      playerName: '',
+      coins: 250, xp: 0, level: 1,
+      barn: { wheat: 4, lentils: 2 }, barnCap: 60,
+      plots: Array.from({ length: 6 }, (_, i) => ({ id: i, crop: null, plantedAt: 0, readyAt: 0, status: 'empty', yieldMult: 1 })),
+      maxPlots: 24,
+      animals: [], buildings: [],
+      orders: [],            // owned by economy.js
+      market: {},            // owned by economy.js: productKey -> price multiplier
+      activeEvents: [],      // owned by events.js
+      eventLog: [],          // owned by events.js: [{key, name, emoji, kind, at, text}]
+      ownedExpansions: [],   // keys of G.DATA.expansions bought
+      stats: { harvested: 0, ordersDone: 0, coinsEarned: 0, eventsSeen: 0 },
+      flags: {}              // free-form, any module may namespace keys e.g. flags['events.lastRoll']
+    };
+  }
+  G.save = function () { try { localStorage.setItem(SAVE_KEY, JSON.stringify(G.state)); } catch (e) { /* storage unavailable */ } };
+  G.load = function () {
+    try { const raw = localStorage.getItem(SAVE_KEY); if (raw) { const s = JSON.parse(raw); if (s && s.version === 1) return Object.assign(newState(), s); } } catch (e) { }
+    return null;
+  };
+  G.reset = function () { try { localStorage.removeItem(SAVE_KEY); } catch (e) { } G.state = newState(); G.bus.emit('state:reset'); G.bus.emit('change'); };
+  G.state = newState();
+
+  // ---------- modifiers (events.js supplies G.Events.mods; defaults are neutral) ----------
+  // Every multiplier hook receives a key and returns a number (1 = no effect).
+  G.mods = {
+    growth(cropKey) { return (G.Events && G.Events.growthMult) ? G.Events.growthMult(cropKey) : 1; },   // >1 = slower growth (time multiplier)
+    yield(cropKey) { return (G.Events && G.Events.yieldMult) ? G.Events.yieldMult(cropKey) : 1; },       // >1 = more harvest
+    animal(animalKey) { return (G.Events && G.Events.animalMult) ? G.Events.animalMult(animalKey) : 1; }, // >1 = slower production
+    price(productKey) {
+      const ev = (G.Events && G.Events.priceMult) ? G.Events.priceMult(productKey) : 1;
+      const mk = (G.state.market && G.state.market[productKey]) || 1;
+      return ev * mk;
+    },
+    seasonYield(cropKey) {
+      const c = G.DATA.crops[cropKey]; if (!c || !c.seasons) return 1;
+      return c.seasons.includes(G.calendar().season) ? 1 : 0.5; // out-of-season planting halves yield
+    }
+  };
+
+  // ---------- inventory ----------
+  G.barnCount = () => Object.values(G.state.barn).reduce((a, b) => a + b, 0);
+  G.barnFree = () => G.state.barnCap - G.barnCount();
+  G.itemInfo = key => G.DATA.products[key] || G.DATA.crops[key] || { name: key, emoji: '📦', sellPrice: 1 };
+  G.qty = key => G.state.barn[key] || 0;
+  G.hasItems = req => Object.entries(req || {}).every(([k, q]) => G.qty(k) >= q);
+  G.addItem = function (key, n) {
+    const room = G.barnFree();
+    const add = Math.min(n, room);
+    if (add > 0) G.state.barn[key] = G.qty(key) + add;
+    if (add < n) G.toast(`Barn full! Lost ${n - add} ${G.itemInfo(key).name}`, 'bad');
+    G.bus.emit('change');
+    return add;
+  };
+  G.removeItems = function (req) {
+    if (!G.hasItems(req)) return false;
+    for (const [k, q] of Object.entries(req)) { G.state.barn[k] -= q; if (G.state.barn[k] <= 0) delete G.state.barn[k]; }
+    G.bus.emit('change');
+    return true;
+  };
+  G.addCoins = function (n, reason) {
+    G.state.coins = Math.max(0, Math.round(G.state.coins + n));
+    if (n > 0) G.state.stats.coinsEarned += n;
+    G.bus.emit('coins', { delta: n, reason }); G.bus.emit('change');
+  };
+  G.spend = function (n) { if (G.state.coins < n) { G.toast('Not enough coins', 'bad'); return false; } G.addCoins(-n, 'spend'); return true; };
+  G.addXP = function (n) {
+    G.state.xp += n;
+    while (G.state.xp >= G.xpForLevel(G.state.level)) {
+      G.state.xp -= G.xpForLevel(G.state.level); G.state.level++;
+      G.bus.emit('levelup', { level: G.state.level });
+    }
+    G.bus.emit('change');
+  };
+  G.sellPrice = key => Math.max(1, Math.round((G.itemInfo(key).sellPrice || 1) * G.mods.price(key)));
+  G.sell = function (key, n) {
+    n = Math.min(n, G.qty(key)); if (n <= 0) return 0;
+    const total = G.sellPrice(key) * n;
+    G.removeItems({ [key]: n }); G.addCoins(total, 'sell');
+    G.bus.emit('sold', { key, n, total });
+    return total;
+  };
+
+  // ---------- player identity ----------
+  G.playerName = () => G.state.playerName || 'Farmer';
+  G.setPlayerName = function (name) {
+    const clean = String(name || '').replace(/[<>&"]/g, '').trim().slice(0, 20);
+    if (!clean) return false;
+    G.state.playerName = clean;
+    if (!G.state.farmName || G.state.farmName === 'Palouse Homestead') G.state.farmName = clean + "'s Farm";
+    G.bus.emit('player:rename', { name: clean }); G.bus.emit('change'); G.save();
+    return true;
+  };
+  G.setFarmName = function (name) {
+    const clean = String(name || '').replace(/[<>&"]/g, '').trim().slice(0, 28);
+    if (!clean) return false;
+    G.state.farmName = clean; G.bus.emit('change'); G.save(); return true;
+  };
+
+  // ---------- notifications (UI overrides G.toast) ----------
+  G.toast = G.toast || function (msg, kind) { console.log('[toast]', kind || '', msg); };
+
+  // ---------- crops ----------
+  G.plant = function (plotIdx, cropKey) {
+    const p = G.state.plots[plotIdx], c = G.DATA.crops[cropKey];
+    if (!p || !c || p.status !== 'empty') return false;
+    if (G.state.level < (c.level || 1)) { G.toast(`${c.name} unlocks at level ${c.level}`, 'bad'); return false; }
+    if (!G.spend(c.seedCost)) return false;
+    const now = G.util.now();
+    p.crop = cropKey; p.plantedAt = now; p.status = 'growing';
+    p.readyAt = now + c.growSec * 1000 * G.mods.growth(cropKey);
+    p.yieldMult = G.mods.seasonYield(cropKey);
+    G.bus.emit('planted', { plotIdx, cropKey }); G.bus.emit('change');
+    return true;
+  };
+  G.harvest = function (plotIdx) {
+    const p = G.state.plots[plotIdx];
+    if (!p || p.status !== 'ready') return 0;
+    const c = G.DATA.crops[p.crop];
+    const n = Math.max(1, Math.round(c.yield * p.yieldMult * G.mods.yield(p.crop)));
+    const got = G.addItem(p.crop, n);
+    if (got === 0) return 0;
+    G.addXP(c.xp || 1); G.state.stats.harvested += got;
+    const key = p.crop;
+    p.crop = null; p.status = 'empty'; p.plantedAt = 0; p.readyAt = 0; p.yieldMult = 1;
+    G.bus.emit('harvested', { plotIdx, cropKey: key, n: got }); G.bus.emit('change');
+    return got;
+  };
+  // Used by events: damage growing/ready crops. fraction 0..1 of matching plots get hit.
+  // mode: 'destroy' (plot -> withered), 'delay' (adds seconds), 'reduce' (yieldMult *= amount), 'boost' (yieldMult *= amount), 'ripen' (ready now)
+  G.affectPlots = function ({ crops = 'all', fraction = 1, mode = 'reduce', amount = 0.5, includeReady = true } = {}) {
+    const hit = [];
+    G.state.plots.forEach((p, i) => {
+      if (!(p.status === 'growing' || (includeReady && p.status === 'ready'))) return;
+      if (crops !== 'all' && !crops.includes(p.crop)) return;
+      if (Math.random() > fraction) return;
+      if (mode === 'destroy') { p.status = 'withered'; }
+      else if (mode === 'delay') { if (p.status === 'growing') p.readyAt += amount * 1000; }
+      else if (mode === 'reduce' || mode === 'boost') { p.yieldMult *= amount; }
+      else if (mode === 'ripen') { p.readyAt = G.util.now(); }
+      hit.push(i);
+    });
+    G.bus.emit('change');
+    return hit; // plot indexes affected
+  };
+  G.clearWithered = function (plotIdx) {
+    const p = G.state.plots[plotIdx]; if (!p || p.status !== 'withered') return false;
+    p.crop = null; p.status = 'empty'; p.yieldMult = 1; G.bus.emit('change'); return true;
+  };
+  G.plotCost = () => Math.round(100 * Math.pow(1.35, G.state.plots.length - 6));
+  G.buyPlot = function () {
+    if (G.state.plots.length >= G.state.maxPlots) { G.toast('No more land available', 'bad'); return false; }
+    if (!G.spend(G.plotCost())) return false;
+    G.state.plots.push({ id: G.state.plots.length, crop: null, plantedAt: 0, readyAt: 0, status: 'empty', yieldMult: 1 });
+    G.bus.emit('change'); return true;
+  };
+
+  // ---------- animals ----------
+  G.buyAnimal = function (type) {
+    const a = G.DATA.animals[type]; if (!a) return false;
+    if (G.state.level < (a.level || 1)) { G.toast(`${a.name} unlocks at level ${a.level}`, 'bad'); return false; }
+    const owned = G.state.animals.filter(x => x.type === type).length;
+    if (owned >= (a.max || 6)) { G.toast(`Max ${a.max || 6} ${a.name}`, 'bad'); return false; }
+    if (!G.spend(a.cost)) return false;
+    G.state.animals.push({ id: G.util.uid(), type, status: 'hungry', fedAt: 0, readyAt: 0 });
+    G.bus.emit('change'); return true;
+  };
+  G.feedAnimal = function (idx) {
+    const an = G.state.animals[idx]; if (!an || an.status !== 'hungry') return false;
+    const a = G.DATA.animals[an.type];
+    const need = { [a.feed]: a.feedQty || 1 };
+    if (!G.removeItems(need)) { G.toast(`Need ${a.feedQty || 1} ${G.itemInfo(a.feed).name}`, 'bad'); return false; }
+    const now = G.util.now();
+    an.status = 'producing'; an.fedAt = now; an.readyAt = now + a.produceSec * 1000 * G.mods.animal(an.type);
+    G.bus.emit('change'); return true;
+  };
+  G.collectAnimal = function (idx) {
+    const an = G.state.animals[idx]; if (!an || an.status !== 'ready') return 0;
+    const a = G.DATA.animals[an.type];
+    const got = G.addItem(a.product, a.productQty || 1); if (!got) return 0;
+    G.addXP(a.xp || 2); an.status = 'hungry';
+    G.bus.emit('collected', { kind: 'animal', key: a.product, n: got }); G.bus.emit('change');
+    return got;
+  };
+
+  // ---------- buildings ----------
+  G.buyBuilding = function (type) {
+    const b = G.DATA.buildings[type]; if (!b) return false;
+    if (G.state.buildings.some(x => x.type === type)) { G.toast('Already built', 'bad'); return false; }
+    if (G.state.level < (b.level || 1)) { G.toast(`${b.name} unlocks at level ${b.level}`, 'bad'); return false; }
+    if (!G.spend(b.cost)) return false;
+    G.state.buildings.push({ id: G.util.uid(), type, queue: [], maxQueue: 3 });
+    G.bus.emit('change'); return true;
+  };
+  G.findRecipe = (type, recipeId) => (G.DATA.buildings[type].recipes || []).find(r => r.id === recipeId);
+  G.startRecipe = function (bIdx, recipeId) {
+    const b = G.state.buildings[bIdx]; if (!b) return false;
+    const r = G.findRecipe(b.type, recipeId); if (!r) return false;
+    if (G.state.level < (r.level || 1)) { G.toast(`Unlocks at level ${r.level}`, 'bad'); return false; }
+    if (b.queue.length >= b.maxQueue) { G.toast('Queue full', 'bad'); return false; }
+    if (!G.removeItems(r.inputs)) { G.toast('Missing ingredients', 'bad'); return false; }
+    // jobs run sequentially: start after the last job in queue
+    const now = G.util.now();
+    const last = b.queue.length ? b.queue[b.queue.length - 1].readyAt : now;
+    const start = Math.max(now, last);
+    b.queue.push({ recipeId, startAt: start, readyAt: start + r.sec * 1000 });
+    G.bus.emit('change'); return true;
+  };
+  // Collects all finished jobs at front of queue
+  G.collectBuilding = function (bIdx) {
+    const b = G.state.buildings[bIdx]; if (!b) return 0;
+    const now = G.util.now(); let total = 0;
+    while (b.queue.length && b.queue[0].readyAt <= now) {
+      const r = G.findRecipe(b.type, b.queue[0].recipeId);
+      const got = G.addItem(r.output, r.qty || 1); if (!got) break;
+      G.addXP(r.xp || 3); total += got; b.queue.shift();
+      G.bus.emit('collected', { kind: 'building', key: r.output, n: got });
+    }
+    G.bus.emit('change'); return total;
+  };
+
+  // ---------- expansions (barn upgrades, irrigation, etc. defined in DATA.expansions) ----------
+  G.buyExpansion = function (key) {
+    const x = G.DATA.expansions[key]; if (!x) return false;
+    if (G.state.ownedExpansions.includes(key)) return false;
+    if (G.state.level < (x.level || 1)) { G.toast(`Unlocks at level ${x.level}`, 'bad'); return false; }
+    if (x.requires && !G.state.ownedExpansions.includes(x.requires)) { G.toast('Buy the previous upgrade first', 'bad'); return false; }
+    if (!G.spend(x.cost)) return false;
+    G.state.ownedExpansions.push(key);
+    if (x.barnCap) G.state.barnCap += x.barnCap;
+    if (x.maxPlots) G.state.maxPlots += x.maxPlots;
+    G.bus.emit('expansion', { key }); G.bus.emit('change'); return true;
+  };
+  G.hasExpansion = key => G.state.ownedExpansions.includes(key);
+
+  // ---------- tick ----------
+  G.tick = function () {
+    const now = G.util.now(); let changed = false;
+    G.state.plots.forEach(p => { if (p.status === 'growing' && now >= p.readyAt) { p.status = 'ready'; changed = true; } });
+    G.state.animals.forEach(a => { if (a.status === 'producing' && now >= a.readyAt) { a.status = 'ready'; changed = true; } });
+    const cal = G.calendar();
+    if (G._lastDay !== cal.day) { const prev = G._lastDay; G._lastDay = cal.day; if (prev !== undefined) G.bus.emit('newday', cal); }
+    if (G._lastSeason !== cal.season) { const prev = G._lastSeason; G._lastSeason = cal.season; if (prev !== undefined) G.bus.emit('newseason', cal); }
+    G.bus.emit('tick', { now, cal });   // events.js and economy.js hook here
+    if (changed) G.bus.emit('change');
+    G.state.lastTick = now;
+  };
+
+  // ---------- boot ----------
+  G.boot = function () {
+    const loaded = G.load(); if (loaded) G.state = loaded;
+    G.bus.emit('init');            // modules set up (economy seeds orders, events restores, ui renders)
+    G.tick();
+    setInterval(G.tick, 500);
+    setInterval(G.save, 4000);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) G.save(); });
+  };
+  if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', () => G.boot());
+})();
+
+</script>
+<script>/* ---- data.js ---- */
+/* data.js — Kellyville content: crops, products, animals, buildings, expansions, regions. */
+(function () {
+  'use strict';
+  const G = window.G;
+  const D = G.DATA;
+  const ALL = ['spring', 'summer', 'fall', 'winter'];
+
+  Object.assign(D.crops, {
+    wheat: { name: 'Winter Wheat', emoji: '🌾', seedCost: 2, growSec: 20, yield: 4, xp: 1, level: 1, sellPrice: 3, seasons: ALL, region: 'palouse', desc: 'Rolling Palouse hills turn gold with the staple that built the Inland Northwest.' },
+    lentils: { name: 'Lentils', emoji: '🫘', seedCost: 3, growSec: 30, yield: 3, xp: 2, level: 1, sellPrice: 5, seasons: ['spring', 'summer'], region: 'palouse', desc: 'Palouse lentils: small, speedy, and proud of the "Lentil Capital" title.' },
+    alfalfa: { name: 'Alfalfa', emoji: '🌿', seedCost: 3, growSec: 40, yield: 4, xp: 2, level: 1, sellPrice: 4, seasons: ['spring', 'summer', 'fall', 'winter'], region: 'columbia_basin', desc: 'Cut it, bale it, feed it; every Basin pivot circle has some.' },
+    corn: { name: 'Sweet Corn', emoji: '🌽', seedCost: 5, growSec: 60, yield: 4, xp: 3, level: 2, sellPrice: 6, seasons: ['spring', 'summer'], region: 'columbia_basin', desc: 'Basin sunshine and pivot water make ears as sweet as a Saturday market.' },
+    peas: { name: 'Green Peas', emoji: '🫛', seedCost: 4, growSec: 45, yield: 4, xp: 3, level: 3, sellPrice: 6, seasons: ['spring', 'fall', 'winter'], region: 'palouse', desc: 'Cool-weather peas that love Palouse rotation fields.' },
+    chickpeas: { name: 'Garbanzos', emoji: '🥜', seedCost: 8, growSec: 90, yield: 3, xp: 5, level: 4, sellPrice: 12, seasons: ['spring', 'summer'], region: 'palouse', desc: 'Dry-land garbanzos: the hummus-maker\'s favorite Palouse export.' },
+    canola: { name: 'Canola', emoji: '🌼', seedCost: 5, growSec: 75, yield: 4, xp: 4, level: 5, sellPrice: 7, seasons: ['spring', 'fall', 'winter'], region: 'palouse', desc: 'Bright yellow fields that bees swarm to like a rock concert.' },
+    potatoes: { name: 'Russet Potatoes', emoji: '🥔', seedCost: 10, growSec: 150, yield: 5, xp: 8, level: 6, sellPrice: 12, seasons: ['spring', 'summer'], region: 'columbia_basin', desc: 'Basin russets grown under center pivots, destined for fries.' },
+    sweet_onions: { name: 'Walla Walla Sweets', emoji: '🧅', seedCost: 14, growSec: 180, yield: 4, xp: 10, level: 7, sellPrice: 20, seasons: ['spring', 'summer', 'winter'], region: 'walla_walla', desc: 'So sweet you could almost eat them like an apple. Almost.' },
+    asparagus: { name: 'Asparagus', emoji: '🌱', seedCost: 16, growSec: 120, yield: 3, xp: 10, level: 8, sellPrice: 26, seasons: ['spring'], region: 'tri_cities', desc: 'Spring spears shoot up overnight in the warm Tri-Cities soil.' },
+    mint: { name: 'Peppermint', emoji: '🍃', seedCost: 18, growSec: 200, yield: 4, xp: 12, level: 9, sellPrice: 24, seasons: ['summer', 'fall'], region: 'yakima', desc: 'The Yakima Valley smells like a candy cane after harvest.' },
+    pumpkins: { name: 'Pumpkins', emoji: '🎃', seedCost: 25, growSec: 240, yield: 3, xp: 15, level: 10, sellPrice: 38, seasons: ['fall'], region: 'spokane', desc: 'Orange giants bound for Spokane\'s fall farmers markets.' },
+    hops: { name: 'Hops', emoji: '🍺', seedCost: 40, growSec: 360, yield: 5, xp: 20, level: 11, sellPrice: 26, seasons: ['summer', 'fall'], region: 'yakima', desc: 'Towering Yakima bines supply most of America\'s hops.' },
+    apples: { name: 'Apples', emoji: '🍎', seedCost: 50, growSec: 420, yield: 6, xp: 25, level: 12, sellPrice: 24, seasons: ['fall'], region: 'wenatchee', desc: 'Crisp Honeycrisp from the Apple Capital of the World.' },
+    cherries: { name: 'Cherries', emoji: '🍒', seedCost: 60, growSec: 480, yield: 5, xp: 30, level: 14, sellPrice: 36, seasons: ['summer'], region: 'wenatchee', desc: 'Rainier and Bing cherries: one short, sweet summer rush.' },
+    grapes: { name: 'Wine Grapes', emoji: '🍇', seedCost: 70, growSec: 540, yield: 6, xp: 35, level: 16, sellPrice: 32, seasons: ['fall'], region: 'tri_cities', desc: 'Sun-soaked Red Mountain vines make big, bold fruit.' }
+  });
+
+  Object.assign(D.products, {
+    chicken_feed: { name: 'Chicken Feed', emoji: '🥣', sellPrice: 6, desc: 'Wheat and cracked corn scratch mix.' },
+    cow_feed: { name: 'Cow Feed', emoji: '🪣', sellPrice: 8, desc: 'Alfalfa and corn blend, cattle approved.' },
+    sheep_feed: { name: 'Sheep Feed', emoji: '🌾', sellPrice: 9, desc: 'Alfalfa pellets for the Ellensburg flock.' },
+    eggs: { name: 'Farm Eggs', emoji: '🥚', sellPrice: 10, desc: 'Fresh from the henhouse.' },
+    milk: { name: 'Milk', emoji: '🥛', sellPrice: 16, desc: 'Cold, creamy, and straight from the dairy.' },
+    wool: { name: 'Wool', emoji: '🧶', sellPrice: 32, desc: 'Soft fleece sheared off a rodeo-town sheep.' },
+    honey: { name: 'Canola Honey', emoji: '🍯', sellPrice: 24, desc: 'Mild, creamy honey from canola blossoms.' },
+    flour: { name: 'Palouse Flour', emoji: '🥡', sellPrice: 9, desc: 'Stone-ground wheat flour.' },
+    bread: { name: 'Country Bread', emoji: '🍞', sellPrice: 42, desc: 'A warm loaf with a crackly crust.' },
+    butter: { name: 'Butter', emoji: '🧈', sellPrice: 42, desc: 'Churned creamery butter.' },
+    cheese: { name: 'Farmhouse Cheese', emoji: '🧀', sellPrice: 70, desc: 'Sharp, aged, and loved in Spokane.' },
+    apple_cider: { name: 'Apple Cider', emoji: '🧃', sellPrice: 55, desc: 'Pressed from Wenatchee apples.' },
+    apple_pie: { name: 'Apple Pie', emoji: '🥧', sellPrice: 140, desc: 'Cinnamon, butter-crust, Apple Capital pride.' },
+    cherry_pie: { name: 'Cherry Pie', emoji: '🍰', sellPrice: 200, desc: 'Tart cherries in a golden lattice.' },
+    wine: { name: 'Red Mountain Red', emoji: '🍷', sellPrice: 200, desc: 'A bold red from Tri-Cities grapes.' },
+    ipa: { name: 'Yakima IPA', emoji: '🍻', sellPrice: 130, desc: 'Piney, citrusy, and hop-forward.' },
+    french_fries: { name: 'French Fries', emoji: '🍟', sellPrice: 55, desc: 'Golden Basin russet fries.' },
+    onion_rings: { name: 'Onion Rings', emoji: '⭕', sellPrice: 75, desc: 'Crispy rings of Walla Walla sweets.' },
+    hummus: { name: 'Hummus', emoji: '🥙', sellPrice: 55, desc: 'Silky Palouse garbanzo dip.' },
+    lentil_soup: { name: 'Lentil Soup', emoji: '🍲', sellPrice: 55, desc: 'Hearty, warm, and wintertime ready.' },
+    mint_oil: { name: 'Mint Oil', emoji: '🧴', sellPrice: 110, desc: 'Distilled peppermint essence from Yakima.' },
+    mint_tea: { name: 'Mint Tea', emoji: '🍵', sellPrice: 70, desc: 'A cool, bright cup of valley peppermint.' },
+    wool_sweater: { name: 'Wool Sweater', emoji: '🧥', sellPrice: 100, desc: 'Cozy knit for those chilly Spokane winters.' },
+    wool_scarf: { name: 'Wool Scarf', emoji: '🧣', sellPrice: 52, desc: 'A quick weave, a lot of warmth.' },
+    pumpkin_pie: { name: 'Pumpkin Pie', emoji: '🥧', sellPrice: 160, desc: 'Fall on a plate, whipped cream optional.' },
+    honey_cake: { name: 'Honey Cake', emoji: '🎂', sellPrice: 80, desc: 'Moist, golden, and just sweet enough.' },
+    grape_juice: { name: 'Grape Juice', emoji: '🫐', sellPrice: 75, desc: 'Sweet Concord-style juice from fresh grapes.' },
+    rose: { name: 'Columbia Valley Rosé', emoji: '🥂', sellPrice: 260, desc: 'Blush wine blended with a splash of cherry.' },
+    hefeweizen: { name: 'Hefeweizen', emoji: '🍺', sellPrice: 60, desc: 'A hazy, easy-drinking wheat beer.' }
+  });
+
+  Object.assign(D.animals, {
+    chickens: { name: 'Chicken', emoji: '🐔', cost: 60, level: 2, max: 6, feed: 'chicken_feed', feedQty: 1, produceSec: 60, product: 'eggs', productQty: 1, xp: 2, desc: 'Free-range hens pecking around the Palouse farmyard.' },
+    cows: { name: 'Dairy Cow', emoji: '🐄', cost: 300, level: 5, max: 6, feed: 'cow_feed', feedQty: 1, produceSec: 150, product: 'milk', productQty: 2, xp: 6, desc: 'Ellensburg-raised Holsteins with plenty of opinions.' },
+    bees: { name: 'Beehive', emoji: '🐝', cost: 350, level: 6, max: 4, feed: 'canola', feedQty: 1, produceSec: 200, product: 'honey', productQty: 2, xp: 8, desc: 'Busy bees working the canola bloom.' },
+    sheep: { name: 'Sheep', emoji: '🐑', cost: 450, level: 8, max: 6, feed: 'sheep_feed', feedQty: 1, produceSec: 240, product: 'wool', productQty: 2, xp: 10, desc: 'Woolly flock from Ellensburg rodeo country.' }
+  });
+
+  Object.assign(D.buildings, {
+    feed_mill: { name: 'Feed Mill', emoji: '🏭', cost: 100, level: 2, desc: 'Mixes grain and hay into animal feed.', recipes: [
+      { id: 'chicken_feed', name: 'Chicken Feed', inputs: { wheat: 2, corn: 1 }, output: 'chicken_feed', qty: 2, sec: 30, xp: 3, level: 2 },
+      { id: 'cow_feed', name: 'Cow Feed', inputs: { alfalfa: 2, corn: 1 }, output: 'cow_feed', qty: 2, sec: 45, xp: 4, level: 5 },
+      { id: 'sheep_feed', name: 'Sheep Feed', inputs: { alfalfa: 2, wheat: 1 }, output: 'sheep_feed', qty: 2, sec: 60, xp: 5, level: 8 }
+    ] },
+    grain_mill: { name: 'Grain Mill', emoji: '⚙️', cost: 250, level: 3, desc: 'Stone burrs grind Palouse wheat to flour.', recipes: [
+      { id: 'flour', name: 'Flour', inputs: { wheat: 2 }, output: 'flour', qty: 1, sec: 40, xp: 4, level: 3 },
+      { id: 'flour_bulk', name: 'Bulk Flour', inputs: { wheat: 6 }, output: 'flour', qty: 3, sec: 100, xp: 10, level: 5 }
+    ] },
+    bakery: { name: 'Bakery', emoji: '🥖', cost: 400, level: 4, desc: 'Ovens warm the farm with bread and pies.', recipes: [
+      { id: 'bread', name: 'Country Bread', inputs: { flour: 2, eggs: 1 }, output: 'bread', qty: 1, sec: 90, xp: 8, level: 4 },
+      { id: 'honey_cake', name: 'Honey Cake', inputs: { flour: 2, honey: 1, eggs: 1 }, output: 'honey_cake', qty: 1, sec: 150, xp: 14, level: 9 },
+      { id: 'apple_pie', name: 'Apple Pie', inputs: { flour: 2, apples: 3 }, output: 'apple_pie', qty: 1, sec: 180, xp: 25, level: 12 },
+      { id: 'cherry_pie', name: 'Cherry Pie', inputs: { flour: 2, cherries: 3 }, output: 'cherry_pie', qty: 1, sec: 210, xp: 32, level: 14 }
+    ] },
+    creamery: { name: 'Creamery', emoji: '🏪', cost: 500, level: 6, desc: 'Turns fresh milk into butter and cheese.', recipes: [
+      { id: 'butter', name: 'Butter', inputs: { milk: 2 }, output: 'butter', qty: 1, sec: 60, xp: 8, level: 6 },
+      { id: 'cheese', name: 'Farmhouse Cheese', inputs: { milk: 3 }, output: 'cheese', qty: 1, sec: 120, xp: 14, level: 8 }
+    ] },
+    fry_shack: { name: 'Fry Shack', emoji: '🍔', cost: 600, level: 7, desc: 'Sizzling fryer for Basin spuds and Walla Walla onions.', recipes: [
+      { id: 'french_fries', name: 'French Fries', inputs: { potatoes: 3 }, output: 'french_fries', qty: 1, sec: 90, xp: 12, level: 7 },
+      { id: 'onion_rings', name: 'Onion Rings', inputs: { sweet_onions: 2, flour: 1 }, output: 'onion_rings', qty: 1, sec: 100, xp: 16, level: 8 }
+    ] },
+    kitchen: { name: 'Farm Kitchen', emoji: '🍳', cost: 700, level: 5, desc: 'A big stove for soups, dips, and holiday pies.', recipes: [
+      { id: 'lentil_soup', name: 'Lentil Soup', inputs: { lentils: 3, sweet_onions: 1 }, output: 'lentil_soup', qty: 1, sec: 100, xp: 10, level: 7 },
+      { id: 'hummus', name: 'Hummus', inputs: { chickpeas: 3 }, output: 'hummus', qty: 1, sec: 80, xp: 10, level: 5 },
+      { id: 'pumpkin_pie', name: 'Pumpkin Pie', inputs: { flour: 2, pumpkins: 2, eggs: 1 }, output: 'pumpkin_pie', qty: 1, sec: 170, xp: 24, level: 10 }
+    ] },
+    distillery: { name: 'Mint Distillery', emoji: '⚗️', cost: 800, level: 9, desc: 'Copper stills steam out peppermint oil.', recipes: [
+      { id: 'mint_tea', name: 'Mint Tea', inputs: { mint: 2 }, output: 'mint_tea', qty: 1, sec: 60, xp: 12, level: 10 },
+      { id: 'mint_oil', name: 'Mint Oil', inputs: { mint: 3 }, output: 'mint_oil', qty: 1, sec: 150, xp: 18, level: 9 }
+    ] },
+    loom: { name: 'Weaving Loom', emoji: '🧵', cost: 900, level: 9, desc: 'Weaves wool into warm winter wear.', recipes: [
+      { id: 'wool_scarf', name: 'Wool Scarf', inputs: { wool: 1 }, output: 'wool_scarf', qty: 1, sec: 90, xp: 12, level: 9 },
+      { id: 'wool_sweater', name: 'Wool Sweater', inputs: { wool: 2 }, output: 'wool_sweater', qty: 1, sec: 180, xp: 20, level: 10 }
+    ] },
+    cider_press: { name: 'Cider Press', emoji: '🍏', cost: 900, level: 12, desc: 'Squeezes Wenatchee apples and grapes into juice.', recipes: [
+      { id: 'apple_cider', name: 'Apple Cider', inputs: { apples: 3 }, output: 'apple_cider', qty: 2, sec: 120, xp: 22, level: 12 },
+      { id: 'grape_juice', name: 'Grape Juice', inputs: { grapes: 3 }, output: 'grape_juice', qty: 2, sec: 150, xp: 28, level: 16 }
+    ] },
+    hop_brewery: { name: 'Hop Brewery', emoji: '🛢️', cost: 1200, level: 13, desc: 'Small-batch brewhouse in Yakima style.', recipes: [
+      { id: 'hefeweizen', name: 'Hefeweizen', inputs: { hops: 1, wheat: 4 }, output: 'hefeweizen', qty: 1, sec: 120, xp: 18, level: 13 },
+      { id: 'ipa', name: 'Yakima IPA', inputs: { hops: 3, wheat: 2 }, output: 'ipa', qty: 1, sec: 200, xp: 30, level: 14 }
+    ] },
+    winery: { name: 'Winery', emoji: '🍾', cost: 1500, level: 16, desc: 'Oak barrels and Walla Walla Valley bragging rights.', recipes: [
+      { id: 'wine', name: 'Red Mountain Red', inputs: { grapes: 4 }, output: 'wine', qty: 1, sec: 240, xp: 38, level: 16 },
+      { id: 'rose', name: 'Columbia Valley Rosé', inputs: { grapes: 3, cherries: 2 }, output: 'rose', qty: 1, sec: 300, xp: 50, level: 18 }
+    ] }
+  });
+
+  Object.assign(D.expansions, {
+    barn_1: { name: 'Barn Extension I', emoji: '🏚️', cost: 200, level: 3, desc: 'Add a lean-to for 40 more items.', barnCap: 40 },
+    barn_2: { name: 'Barn Extension II', emoji: '🏠', cost: 800, level: 8, desc: 'A proper hayloft: 60 more items.', barnCap: 60, requires: 'barn_1' },
+    barn_3: { name: 'Grain Elevator', emoji: '🏗️', cost: 2500, level: 18, desc: 'Towering silo space: 100 more items.', barnCap: 100, requires: 'barn_2' },
+    land_1: { name: 'Neighbor\'s Field', emoji: '🗺️', cost: 400, level: 4, desc: 'Buy the north forty. Room for 6 more plots.', maxPlots: 6 },
+    land_2: { name: 'Ridgeline Acres', emoji: '⛰️', cost: 1500, level: 12, desc: 'Another stretch of hills: 6 more plots.', maxPlots: 6, requires: 'land_1' },
+    center_pivot: { name: 'Center Pivot', emoji: '💦', cost: 1200, level: 6, desc: 'Columbia Basin irrigation protects crops from drought and heat.', tag: 'irrigation' },
+    windbreak_trees: { name: 'Windbreak Trees', emoji: '🌲', cost: 600, level: 5, desc: 'Rows of poplars tame dust storms and gales.', tag: 'windbreak' },
+    frost_fans: { name: 'Frost Fans', emoji: '🌀', cost: 2000, level: 12, desc: 'Orchard wind machines fight off spring frost.', tag: 'frost_fans' },
+    apiary_partners: { name: 'Apiary Partners', emoji: '🐝', cost: 700, level: 7, desc: 'Hire beekeepers for a pollination bonus.', tag: 'beehives' },
+    firebreak: { name: 'Firebreak', emoji: '🚒', cost: 900, level: 9, desc: 'Disced strips slow wildfire in dry summers.', tag: 'firebreak' },
+    cold_storage: { name: 'Cold Storage', emoji: '🧊', cost: 1500, level: 15, desc: 'Controlled-atmosphere rooms ride out price crashes.', tag: 'cold_storage' }
+  });
+
+  D.regions = {
+    palouse: { name: 'The Palouse', emoji: '🌄', blurb: 'Rolling golden hills of wheat, lentils, and chickpeas near Pullman. Dryland farming at its finest.' },
+    yakima: { name: 'Yakima Valley', emoji: '🍺', blurb: 'Sunny valley that grows most of the nation\'s hops, plus fragrant mint and juicy orchards.' },
+    walla_walla: { name: 'Walla Walla', emoji: '🍷', blurb: 'Home of the famous sweet onion and a booming wine country in the Blue Mountain foothills.' },
+    wenatchee: { name: 'Wenatchee', emoji: '🍎', blurb: 'The Apple Capital of the World, with cherry orchards climbing the Columbia river bluffs.' },
+    columbia_basin: { name: 'Columbia Basin', emoji: '💦', blurb: 'Desert turned green by center pivots: potatoes, corn, and alfalfa as far as you can see.' },
+    tri_cities: { name: 'Tri-Cities', emoji: '🍇', blurb: 'Kennewick, Pasco, and Richland: early asparagus and Red Mountain grapes in the sun.' },
+    ellensburg: { name: 'Ellensburg', emoji: '🤠', blurb: 'Rodeo town famous for timothy hay, sheep, cattle, and Labor Day bucking broncos.' },
+    spokane: { name: 'Spokane', emoji: '🛍️', blurb: 'The Lilac City and its bustling farmers market, where every harvest finds a buyer.' }
+  };
+})();
+
+</script>
+<script>/* ---- events.js ---- */
+/* events.js — Kellyville random farm events (G.Events).
+   Weather, pests, markets, festivals and neighbors that hurt or help the farm.
+   Instant events (durationSec 0, no choices) are logged + announced via 'event:start' but never enter
+   G.state.activeEvents, so they get no 'event:end'. Timed and pending-choice events live in activeEvents. */
+(function () {
+  'use strict';
+  const G = window.G;
+  const U = G.util;
+
+  const CHOICE_SEC = 30;
+  const MAX_ACTIVE = 2;
+  const TAG_NAMES = { irrigation: 'irrigation', windbreak: 'windbreak', frost_fans: 'frost fans', firebreak: 'firebreak', cold_storage: 'cold storage', beehives: 'beehives' };
+  const CLAMP = { growth: [0.5, 2], yield: [0.4, 2.5], animal: [0.5, 2], price: [0.6, 2.0] };
+
+  // ---------- crop groups ----------
+  const GRAIN = ['wheat', 'lentils', 'chickpeas', 'peas', 'alfalfa', 'canola'];
+  const ORCHARD = ['apples', 'cherries', 'grapes'];
+  const FROSTY = ['apples', 'cherries', 'grapes', 'asparagus', 'peas', 'potatoes'];
+  const TENDER = ['corn', 'pumpkins', 'potatoes', 'sweet_onions', 'grapes', 'hops', 'asparagus', 'mint'];
+  const THIRSTY = ['corn', 'potatoes', 'sweet_onions', 'asparagus', 'mint', 'hops', 'apples', 'cherries', 'grapes', 'pumpkins', 'alfalfa'];
+  const FRESH = ['potatoes', 'sweet_onions', 'apples', 'cherries', 'grapes', 'asparagus', 'pumpkins', 'corn', 'mint'];
+  const HOPPER = GRAIN.concat(['corn', 'pumpkins']);
+
+  // ---------- helpers ----------
+  const S = () => G.state;
+  function ensure() {
+    const s = G.state;
+    if (!Array.isArray(s.activeEvents)) s.activeEvents = [];
+    if (!Array.isArray(s.eventLog)) s.eventLog = [];
+    if (!s.flags || typeof s.flags !== 'object') s.flags = {};
+    if (!s.stats || typeof s.stats !== 'object') s.stats = {};
+    if (typeof s.stats.eventsSeen !== 'number') s.stats.eventsSeen = 0;
+    if (!Array.isArray(s.ownedExpansions)) s.ownedExpansions = [];
+    return s;
+  }
+  function hasTag(tag) {
+    const exp = (G.DATA && G.DATA.expansions) || {};
+    return (S().ownedExpansions || []).some(k => exp[k] && exp[k].tag === tag);
+  }
+  function hasAnimal(type) { return (S().animals || []).some(a => a && a.type === type); }
+  function plotCount(list) {
+    return (S().plots || []).filter(p => p && (p.status === 'growing' || p.status === 'ready') && (list === 'all' || list.indexOf(p.crop) >= 0)).length;
+  }
+  const needPlots = list => () => plotCount(list) > 0;
+  const pl = n => n + ' plot' + (n === 1 ? '' : 's');
+  const pretty = k => String(k).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  const scaleMult = (m, k) => 1 + (m - 1) * (k == null ? 1 : k);
+
+  // Targeted plot damage/boost. Like G.affectPlots but picks an exact count (so destroy can be capped at ~40% of all plots)
+  // and adds mode 'delayPct' (amount = fraction of remaining grow time; negative = faster).
+  function strike(o) {
+    o = o || {};
+    const plots = S().plots || [], crops = o.crops || 'all', mode = o.mode || 'reduce';
+    const frac = U.clamp(o.fraction == null ? 1 : o.fraction, 0, 1), now = U.now();
+    const amt = typeof o.amount === 'number' ? o.amount : 0.5;
+    const cand = [];
+    plots.forEach((p, i) => {
+      if (!p) return;
+      const wide = mode === 'destroy' || mode === 'reduce' || mode === 'boost';
+      const okStatus = p.status === 'growing' || (wide && o.includeReady !== false && p.status === 'ready');
+      if (!okStatus) return;
+      if (crops !== 'all' && crops.indexOf(p.crop) < 0) return;
+      cand.push(i);
+    });
+    shuffle(cand);
+    let n = Math.round(cand.length * frac);
+    if (n === 0 && cand.length && frac >= 0.15) n = 1;
+    if (mode === 'destroy') n = Math.min(n, Math.max(1, Math.floor(plots.length * 0.4)));
+    const hit = cand.slice(0, n);
+    hit.forEach(i => {
+      const p = plots[i];
+      if (mode === 'destroy') p.status = 'withered';
+      else if (mode === 'reduce') p.yieldMult = Math.max(0.25, (p.yieldMult || 1) * amt);
+      else if (mode === 'boost') p.yieldMult = Math.min(3, (p.yieldMult || 1) * amt);
+      else if (mode === 'ripen') p.readyAt = now;
+      else if (mode === 'delay') p.readyAt += amt * 1000;
+      else if (mode === 'delayPct') p.readyAt += Math.max(0, p.readyAt - now) * amt;
+    });
+    G.bus.emit('change');
+    return hit;
+  }
+
+  // ---------- definitions ----------
+  // Pest choice builder (spray vs organic vs ignore)
+  function pestEvent(o) {
+    return {
+      key: o.key, name: o.name, emoji: o.emoji, kind: 'bad', seasons: o.seasons, minLevel: o.minLevel, weight: o.weight || 1, durationSec: 0,
+      desc: o.desc, requires: needPlots(o.targets),
+      text: c => o.text,
+      choices: [
+        {
+          label: 'Spray insecticide', cost: c => Math.round(U.clamp(50 + c.level * 8, 50, 160)),
+          desc: 'Fast and effective. Your crops are protected.',
+          apply: c => { c.G.addXP(5); return 'Spray rigs knocked the ' + o.pest + ' back before they could do real harm.'; }
+        },
+        {
+          label: 'Go organic', cost: c => Math.round(U.clamp(20 + c.level * 4, 20, 80)),
+          desc: 'Traps, predators and neem oil. Halves the damage and earns an organic premium for a while.',
+          durationSec: 120,
+          mods: { price: { products: o.targets, mult: 1.12, fixed: true, label: o.premiumLabel } },
+          apply: c => {
+            const h = strike({ crops: o.targets, fraction: 0.5, mode: 'reduce', amount: 0.85 });
+            return 'Organic controls held the ' + o.pest + ' in check' + (h.length ? ' (' + pl(h.length) + ' lightly nibbled)' : '') + '. Buyers pay a premium for clean fruit and grain.';
+          }
+        },
+        {
+          label: 'Ignore it', cost: 0,
+          desc: 'Save your coins and hope for the best.',
+          apply: c => {
+            const d = strike({ crops: o.targets, fraction: 0.2 * c.k, mode: 'destroy' });
+            const r = strike({ crops: o.targets, fraction: 0.6, mode: 'reduce', amount: 1 - 0.35 * c.k });
+            return 'The ' + o.pest + ' feasted: ' + pl(d.length) + ' lost and ' + pl(r.length) + ' badly damaged.';
+          }
+        }
+      ]
+    };
+  }
+
+  const defs = [
+    // ================= BAD =================
+    {
+      key: 'dust_storm', name: 'Palouse Dust Storm', emoji: '🌪️', kind: 'bad', seasons: ['spring', 'summer', 'fall'], minLevel: 1, weight: 1, durationSec: 0,
+      mitigatedBy: 'windbreak', requires: needPlots('all'),
+      desc: 'Hot dry winds strip topsoil off the rolling hills.',
+      onStart(c) {
+        const hit = strike({ crops: 'all', fraction: 0.6, mode: 'reduce', amount: 1 - 0.25 * c.k });
+        const slow = strike({ crops: 'all', fraction: 1, mode: 'delayPct', amount: 0.15 * c.k });
+        return { hit: hit.length, slowed: slow.length };
+      },
+      text: c => c.result.hit ? 'A wall of dust rolled off the Palouse hills, scouring ' + pl(c.result.hit) + ' and slowing growth.' : 'A wall of dust rolled across the hills but found little to harm.'
+    },
+    {
+      key: 'wildfire_smoke', name: 'Wildfire Smoke', emoji: '😶‍🌫️', kind: 'bad', seasons: ['summer', 'fall'], minLevel: 1, weight: 1, durationSec: 150,
+      desc: 'Smoke from Cascade fires blankets the valley.',
+      mods: {
+        growth: { crops: 'all', mult: 1.2 }, yield: { crops: 'all', mult: 0.92 },
+        animal: { animals: 'all', mult: 1.15 }
+      },
+      text: () => 'Smoke from Cascade wildfires blankets the basin. The sun turns orange, crops sulk and animals are listless.'
+    },
+    {
+      key: 'wildfire_nearby', name: 'Fire Near the Fields', emoji: '🔥', kind: 'bad', seasons: ['summer', 'fall'], minLevel: 3, weight: 0.8, durationSec: 0,
+      mitigatedBy: 'firebreak', requires: needPlots('all'),
+      desc: 'A grass fire is racing toward your land.',
+      text: () => 'A grass fire jumped the highway and is racing toward your fields! Hire a crew to cut a firebreak, or gamble that the wind shifts.',
+      choices: [
+        {
+          label: 'Hire firebreak crew', cost: c => Math.round(U.clamp(70 + c.level * 12, 70, 260) * (c.mitigated ? 0.5 : 1)),
+          desc: 'Dozers cut a fireline around your fields. Crops safe.',
+          apply: c => { c.G.addXP(8); return 'The crew cut a fireline just in time. Your fields were spared.'; }
+        },
+        {
+          label: 'Risk it', cost: 0,
+          desc: 'About a 65% chance embers reach your crops.' + ' (A firebreak halves the damage.)',
+          apply: c => {
+            if (Math.random() < 0.65) {
+              const d = strike({ crops: 'all', fraction: 0.4 * c.k, mode: 'destroy' });
+              return d.length ? 'Embers leapt the road! ' + pl(d.length) + ' burned' + (c.mitigated ? ' (your firebreak saved the rest).' : '.') : 'Embers fell short of your crops.';
+            }
+            return 'The wind shifted and the fire turned away. Lucky!';
+          }
+        }
+      ]
+    },
+    {
+      key: 'heat_dome', name: 'Heat Dome', emoji: '🥵', kind: 'bad', seasons: ['summer'], minLevel: 1, weight: 1, durationSec: 120,
+      mitigatedBy: 'irrigation',
+      desc: 'Triple-digit temperatures bake the Columbia Basin.',
+      mods: {
+        growth: { crops: 'all', mult: 1.3 }, yield: { crops: 'all', mult: 0.82 },
+        animal: { animals: 'all', mult: 1.25 }
+      },
+      onStart(c) { return { slowed: strike({ crops: 'all', fraction: 1, mode: 'delayPct', amount: 0.12 * c.k }).length }; },
+      text: () => 'A heat dome parks over the Columbia Basin with triple-digit highs. Crops wilt and animals pant in the shade.'
+    },
+    {
+      key: 'drought', name: 'Irrigation Curtailment', emoji: '🏜️', kind: 'bad', seasons: ['summer'], minLevel: 2, weight: 0.9, durationSec: 180,
+      mitigatedBy: 'irrigation',
+      desc: 'Junior water rights in the Yakima Basin are cut off.',
+      mods: {
+        growth: { crops: THIRSTY, mult: 1.25, label: '💧 Thirsty crops' },
+        yield: { crops: THIRSTY, mult: 0.8, label: '💧 Thirsty crops' }
+      },
+      text: () => 'Low snowmelt means the Bureau of Reclamation curtails junior water rights in the Yakima Basin. Corn, hops and orchards are going thirsty.'
+    },
+    {
+      key: 'late_frost', name: 'Late Spring Frost', emoji: '🥶', kind: 'bad', seasons: ['spring'], minLevel: 3, weight: 1, durationSec: 0,
+      mitigatedBy: 'frost_fans', requires: needPlots(FROSTY),
+      desc: 'A hard freeze nips the blossoms.',
+      onStart(c) { return { lost: strike({ crops: FROSTY, fraction: 0.4 * c.k, mode: 'destroy' }).length }; },
+      text: c => c.result.lost ? 'A clear, still night dropped to 26°F during bloom. ' + pl(c.result.lost) + ' of tender crops and blossoms froze.' : 'A cold snap threatened the blossoms but passed without lasting damage.'
+    },
+    {
+      key: 'early_freeze', name: 'Early Fall Freeze', emoji: '❄️', kind: 'bad', seasons: ['fall'], minLevel: 2, weight: 1, durationSec: 0,
+      mitigatedBy: 'frost_fans', requires: needPlots(TENDER),
+      desc: 'Winter arrives weeks early.',
+      onStart(c) {
+        const lost = strike({ crops: TENDER, fraction: 0.35 * c.k, mode: 'destroy' });
+        const slow = strike({ crops: 'all', fraction: 1, mode: 'delayPct', amount: 0.1 * c.k });
+        return { lost: lost.length, slowed: slow.length };
+      },
+      text: c => c.result.lost ? 'An early killing freeze hit before harvest: ' + pl(c.result.lost) + ' of tender crops blackened.' : 'An early freeze nipped the fields but your crops held on, only slowed by the cold.'
+    },
+    {
+      key: 'hailstorm', name: 'Hailstorm', emoji: '🧊', kind: 'bad', seasons: ['spring', 'summer', 'fall'], minLevel: 2, weight: 0.8, durationSec: 0,
+      requires: needPlots('all'),
+      desc: 'Marble-sized hail shreds leaves and fruit.',
+      onStart(c) {
+        const d = strike({ crops: 'all', fraction: 0.25 * c.k, mode: 'destroy' });
+        const r = strike({ crops: 'all', fraction: 0.5, mode: 'reduce', amount: 1 - 0.2 * c.k });
+        return { lost: d.length, bruised: r.length };
+      },
+      text: c => (c.result.lost || c.result.bruised) ? 'A summer thunderstorm pounded the farm with hail: ' + pl(c.result.lost) + ' flattened and ' + pl(c.result.bruised) + ' bruised.' : 'Hail rattled the barn roof but nothing was growing to damage.'
+    },
+    {
+      key: 'cherry_rain', name: 'Rain at Cherry Harvest', emoji: '🌧️', kind: 'bad', seasons: ['spring', 'summer'], minLevel: 3, weight: 0.9, durationSec: 0,
+      requires: needPlots(['cherries']),
+      desc: 'Rain makes ripe cherries swell and split.',
+      text: () => 'A surprise rainstorm is about to hit your ripening cherries, and wet fruit splits. Hire helicopters to blow the trees dry, or take your chances.',
+      choices: [
+        {
+          label: 'Hire helicopters', cost: c => Math.round(U.clamp(90 + c.level * 10, 90, 240)),
+          desc: 'Rotor wash dries the trees. No splitting.',
+          apply: c => { c.G.addXP(6); return 'Helicopters hovered over the orchard and dried the trees. The cherries are fine.'; }
+        },
+        {
+          label: 'Let it rain', cost: 0,
+          desc: 'Split fruit means lost yield and softer cherry prices.',
+          durationSec: 100,
+          mods: { price: { products: ['cherries', 'cherry_pie'], mult: 0.85 } },
+          apply: c => {
+            const h = strike({ crops: ['cherries'], fraction: 1, mode: 'reduce', amount: 1 - 0.4 * c.k });
+            return 'The rain split the fruit on ' + pl(h.length) + ' of cherries. Yield is down and buyers are wary.';
+          }
+        }
+      ]
+    },
+    pestEvent({
+      key: 'codling_moth', name: 'Codling Moth Outbreak', emoji: '🐛', seasons: ['spring', 'summer'], minLevel: 3, weight: 0.9,
+      targets: ['apples', 'cherries', 'grapes'], pest: 'moths', premiumLabel: '🍎 Organic fruit',
+      desc: 'Wormy apples threaten the orchard.',
+      text: 'Codling moth traps are overflowing! Larvae are boring into your orchard fruit. Spray, go organic, or ignore it?'
+    }),
+    pestEvent({
+      key: 'grasshoppers', name: 'Grasshopper Swarm', emoji: '🦗', seasons: ['spring', 'summer'], minLevel: 2, weight: 0.9,
+      targets: HOPPER, pest: 'hoppers', premiumLabel: '🌾 Organic grain',
+      desc: 'A dry year breeds hungry grasshoppers.',
+      text: 'A dry year has bred a plague of grasshoppers, and they are marching across the stubble toward your crops. Spray, go organic, or ignore it?'
+    }),
+    {
+      key: 'bird_flu', name: 'Avian Flu Scare', emoji: '🦠', kind: 'bad', seasons: ['fall', 'winter', 'spring'], minLevel: 2, weight: 0.9, durationSec: 150,
+      requires: () => hasAnimal('chickens'),
+      desc: 'HPAI is detected in a nearby flock.',
+      mods: {
+        animal: { animals: ['chickens'], mult: 1.5 },
+        price: { products: ['eggs'], mult: 0.7 }
+      },
+      text: () => 'Avian flu was found in a flock a county over. Your hens are on lockdown and stressed, and shoppers are shunning eggs.'
+    },
+    {
+      key: 'price_crash', name: 'Fresh Produce Glut', emoji: '📉', kind: 'bad', seasons: ['spring', 'summer', 'fall', 'winter'], minLevel: 2, weight: 0.9, durationSec: 150,
+      mitigatedBy: 'cold_storage',
+      desc: 'Too much fruit and veg floods the market.',
+      mods: { price: { products: FRESH, mult: 0.65, label: '🥔 Fresh produce' } },
+      text: () => 'A glut of Northwest fruit and vegetables crashed wholesale prices. Fresh produce is selling cheap.'
+    },
+
+    // ================= GOOD =================
+    {
+      key: 'palouse_rain', name: 'Perfect Palouse Rain', emoji: '🌧️', kind: 'good', seasons: ['spring', 'fall'], minLevel: 1, weight: 1.2, durationSec: 150,
+      desc: 'Soft, steady rain: just what the wheat ordered.',
+      mods: {
+        growth: { crops: GRAIN, mult: 0.8, label: '🌾 Grains & pulses' },
+        yield: { crops: GRAIN, mult: 1.25, label: '🌾 Grains & pulses' }
+      },
+      onStart(c) { return { sped: strike({ crops: GRAIN, fraction: 1, mode: 'delayPct', amount: -0.15 * c.k }).length }; },
+      text: () => 'A gentle two-day Palouse rain soaked the hills. Wheat, lentils and peas are thriving.'
+    },
+    {
+      key: 'bumper_crop', name: 'Bumper Crop', emoji: '🌾', kind: 'good', seasons: ['summer', 'fall'], minLevel: 1, weight: 1, durationSec: 100,
+      requires: needPlots('all'),
+      desc: 'Everything is coming in heavy.',
+      mods: { yield: { crops: 'all', mult: 1.1 } },
+      onStart(c) { return { boosted: strike({ crops: 'all', fraction: 0.5, mode: 'boost', amount: 1.4 }).length }; },
+      text: c => 'Perfect growing weather means a bumper crop' + (c.result.boosted ? ': ' + pl(c.result.boosted) + ' are loaded with extra yield!' : '!')
+    },
+    {
+      key: 'pollinator_boom', name: 'Pollinator Boom', emoji: '🐝', kind: 'good', seasons: ['spring', 'summer'], minLevel: 2, weight: 1, durationSec: 150,
+      amplifiedBy: 'beehives',
+      desc: 'Bees and native pollinators are everywhere.',
+      mods: {
+        yield: { crops: ['apples', 'cherries', 'grapes', 'canola', 'pumpkins'], mult: 1.25, label: '🍎 Pollinated crops' },
+        animal: { animals: ['bees'], mult: 0.75 }
+      },
+      text: () => 'A mild bloom brought a boom of bees and native pollinators. Orchards, canola and pumpkins are setting heavy fruit.'
+    },
+    {
+      key: 'onion_festival', name: 'Sweet Onion Festival', emoji: '🧅', kind: 'good', seasons: ['summer'], minLevel: 2, weight: 1, durationSec: 150,
+      desc: 'Walla Walla celebrates its famous sweets.',
+      mods: { price: { products: ['sweet_onions', 'onion_rings'], mult: 1.6 } },
+      text: () => 'The Walla Walla Sweet Onion Festival is in town! Crowds are paying top dollar for sweet onions and onion rings.'
+    },
+    {
+      key: 'hop_demand', name: 'Yakima Hop Harvest Rush', emoji: '🍺', kind: 'good', seasons: ['fall'], minLevel: 3, weight: 1, durationSec: 150,
+      desc: 'Craft brewers are hunting for fresh hops.',
+      mods: { price: { products: ['hops', 'ipa'], mult: 1.5 } },
+      text: () => 'Craft brewers from Seattle to Portland are racing to buy fresh Yakima hops. Hops and IPA prices are way up.'
+    },
+    {
+      key: 'blossom_festival', name: 'Apple Blossom Festival', emoji: '🌸', kind: 'good', seasons: ['spring'], minLevel: 2, weight: 1, durationSec: 140,
+      desc: 'Tourists flood Wenatchee.',
+      mods: { price: { products: ['apples', 'cherries', 'apple_cider', 'apple_pie', 'cherry_pie', 'honey', 'honey_cake'], mult: 1.35, label: '🍎 Orchard treats' } },
+      onStart(c) { const tips = Math.round(15 + c.level * 6); G.addCoins(tips, 'event'); return { tips }; },
+      text: c => 'The Wenatchee Apple Blossom Festival brought crowds of tourists. They left ' + c.result.tips + ' coins in tips and want pies and cider.'
+    },
+    {
+      key: 'rodeo', name: 'Ellensburg Rodeo', emoji: '🤠', kind: 'good', seasons: ['summer', 'fall'], minLevel: 2, weight: 1, durationSec: 150,
+      desc: 'Hungry cowboys and cowgirls roll into town.',
+      mods: { price: { products: ['eggs', 'milk', 'wool', 'butter', 'cheese', 'honey', 'bread', 'wool_sweater'], mult: 1.3, label: '🐄 Farm goods' } },
+      text: () => 'Labor Day weekend at the Ellensburg Rodeo! Visitors are snapping up eggs, milk, cheese, bread and wool.'
+    },
+    {
+      key: 'kalama_export', name: 'Port of Kalama Export Surge', emoji: '🚢', kind: 'good', seasons: ['spring', 'summer', 'fall', 'winter'], minLevel: 1, weight: 1, durationSec: 150,
+      desc: 'Overseas buyers want Northwest grain.',
+      mods: {
+        price: [
+          { products: ['wheat'], mult: 1.7 },
+          { products: ['lentils', 'chickpeas', 'peas', 'canola'], mult: 1.3, label: '🫘 Pulses & canola' },
+          { products: ['flour', 'bread'], mult: 1.2, label: '🍞 Flour & bread' }
+        ]
+      },
+      text: () => 'Export ships are lining up at the Port of Kalama. Wheat prices are surging, and pulses and flour are up too.'
+    },
+    {
+      key: 'helpers_4h', name: '4-H Kids Lend a Hand', emoji: '🧑‍🌾', kind: 'good', seasons: ['spring', 'summer', 'fall', 'winter'], minLevel: 1, weight: 1.1, durationSec: 0,
+      requires: needPlots('all'),
+      desc: 'Neighbors and 4-H members pitch in.',
+      onStart(c) {
+        const ripe = strike({ crops: 'all', fraction: 0.5, mode: 'ripen' });
+        c.G.addXP(5);
+        return { ripe: ripe.length };
+      },
+      text: c => 'Neighbors and the local 4-H club showed up with gloves and pickup trucks. ' + pl(c.result.ripe) + ' ripened right away, and you earned a little XP.'
+    },
+    {
+      key: 'state_fair', name: 'Blue Ribbon at the State Fair', emoji: '🏆', kind: 'good', seasons: ['fall'], minLevel: 2, weight: 0.9, durationSec: 0,
+      desc: 'Your produce wins at the Washington State Fair.',
+      onStart(c) {
+        const prize = Math.round(80 + c.level * 30 + U.rand(0, 40));
+        G.addCoins(prize, 'event'); c.G.addXP(10);
+        return { prize };
+      },
+      text: c => 'Your entry won a blue ribbon at the Washington State Fair in Puyallup! Prize money: ' + c.result.prize + ' coins.'
+    },
+    {
+      key: 'mild_winter', name: 'Mild Winter', emoji: '🌤️', kind: 'good', seasons: ['winter'], minLevel: 1, weight: 1.2, durationSec: 180,
+      desc: 'Gentle weather eases the cold season.',
+      mods: { growth: { crops: 'all', mult: 0.82 }, animal: { animals: 'all', mult: 0.85 } },
+      text: () => 'A mild winter has the animals comfortable and crops growing faster than they should.'
+    },
+    {
+      key: 'snowpack', name: 'Great Snowpack', emoji: '🏔️', kind: 'good', seasons: ['winter', 'spring'], minLevel: 2, weight: 1, durationSec: 200,
+      amplifiedBy: 'irrigation',
+      desc: 'Cascade snow means a full water year.',
+      mods: { growth: { crops: 'all', mult: 0.8 }, yield: { crops: 'all', mult: 1.1 } },
+      text: () => 'The Cascade snowpack is far above average. Reservoirs will be full and crops will flourish.'
+    },
+    {
+      key: 'chinook', name: 'Chinook Wind Thaw', emoji: '🌬️', kind: 'good', seasons: ['winter'], minLevel: 1, weight: 1, durationSec: 120,
+      desc: 'A warm wind melts the snow overnight.',
+      mods: { growth: { crops: 'all', mult: 0.88 }, animal: { animals: 'all', mult: 0.88 } },
+      onStart() { return { sped: strike({ crops: 'all', fraction: 1, mode: 'delayPct', amount: -0.12 }).length }; },
+      text: () => 'A warm Chinook wind swept down from the Cascades and melted the snow overnight. Everything perks up.'
+    },
+    {
+      key: 'crush_season', name: 'Wine Country Crush', emoji: '🍷', kind: 'good', seasons: ['fall'], minLevel: 3, weight: 1, durationSec: 150,
+      desc: 'Wine tourists flock to Walla Walla and Red Mountain.',
+      mods: { price: { products: ['grapes', 'wine', 'apple_cider'], mult: 1.45 } },
+      text: () => 'Harvest crush is on and wine tourists are everywhere. Grapes, wine and cider fetch premium prices.'
+    }
+  ];
+
+  const DEF = {};
+  defs.forEach(d => { DEF[d.key] = d; });
+
+  // ---------- mods ----------
+  function specsOf(rec, def, type) {
+    const out = [];
+    const add = m => { if (m && m[type]) [].concat(m[type]).forEach(s => s && out.push(s)); };
+    add(def.mods);
+    if (rec.ci != null && def.choices && def.choices[rec.ci]) add(def.choices[rec.ci].mods);
+    return out;
+  }
+  const listOf = (type, s) => (type === 'growth' || type === 'yield') ? s.crops : type === 'animal' ? s.animals : s.products;
+  const matches = (list, key) => !list || list === 'all' || [].concat(list).indexOf(key) >= 0;
+  function combined(type, key) {
+    const now = U.now(); let m = 1;
+    (S().activeEvents || []).forEach(rec => {
+      if (!rec || rec.pending || !(rec.endAt > now)) return;
+      const def = DEF[rec.key]; if (!def) return;
+      specsOf(rec, def, type).forEach(s => {
+        if (!matches(listOf(type, s), key)) return;
+        const v = s.fixed ? s.mult : scaleMult(s.mult, rec.k);
+        if (isFinite(v)) m *= v;
+      });
+    });
+    const c = CLAMP[type];
+    return isFinite(m) ? U.clamp(m, c[0], c[1]) : 1;
+  }
+
+  // ---------- describe ----------
+  function lookup(type, k) {
+    const D = G.DATA || {};
+    return type === 'animal' ? (D.animals || {})[k] : ((D.products || {})[k] || (D.crops || {})[k]);
+  }
+  function labelFor(type, s) {
+    if (s.label) return s.label;
+    const list = listOf(type, s);
+    if (!list || list === 'all') return type === 'animal' ? '🐾 All animals' : type === 'price' ? '💰 All goods' : '🌱 All crops';
+    const arr = [].concat(list);
+    const nm = k => { const i = lookup(type, k); return (i && i.emoji ? i.emoji + ' ' : '') + ((i && i.name) || pretty(k)); };
+    if (arr.length <= 2) return arr.map(nm).join(' & ');
+    return nm(arr[0]) + ' +' + (arr.length - 1) + ' more';
+  }
+  function describeMods(rec) {
+    const out = [];
+    try {
+      const def = rec && DEF[rec.key]; if (!def || rec.pending) return out;
+      ['growth', 'yield', 'animal', 'price'].forEach(type => {
+        specsOf(rec, def, type).forEach(s => {
+          const m = s.fixed ? s.mult : scaleMult(s.mult, rec.k);
+          if (!isFinite(m) || Math.abs(m - 1) < 0.005) return;
+          const label = labelFor(type, s);
+          if (type === 'growth' || type === 'animal') {
+            const p = Math.round((1 - m) * 100), what = type === 'growth' ? 'growth' : 'production';
+            out.push(label + ' ' + what + ' ' + Math.abs(p) + '% ' + (p >= 0 ? 'faster' : 'slower'));
+          } else {
+            const p = Math.round((m - 1) * 100);
+            out.push(label + ' ' + type + ' ' + (p >= 0 ? '+' : '') + p + '%');
+          }
+        });
+      });
+    } catch (e) { /* ignore */ }
+    return out;
+  }
+  const timeLeft = rec => rec ? Math.max(0, Math.ceil((rec.endAt - U.now()) / 1000)) : 0;
+
+  // ---------- event lifecycle ----------
+  function makeCtx(def, rec) {
+    const level = S().level || 1, soft = level <= 2;
+    const tags = def.mitigatedBy ? [].concat(def.mitigatedBy) : [];
+    const mitTag = def.kind === 'bad' ? tags.filter(hasTag)[0] : null;
+    const ampTag = def.amplifiedBy ? [].concat(def.amplifiedBy).filter(hasTag)[0] : null;
+    let k = 1;
+    if (def.kind === 'bad') { if (mitTag) k *= 0.5; if (soft) k *= 0.6; } else if (ampTag) k = 1.5;
+    return { def, record: rec, G, level, soft, mitigated: !!mitTag, amplified: !!ampTag, mitTag, ampTag, k, hasTag, strike, result: {} };
+  }
+  function ctxFor(def, rec) {
+    const c = makeCtx(def, rec);
+    if (rec.k != null) { c.k = rec.k; c.mitigated = !!rec.mit; c.amplified = !!rec.amp; c.soft = !!rec.soft; }
+    return c;
+  }
+  const costOf = (ch, ctx) => Math.max(0, Math.round(typeof ch.cost === 'function' ? ch.cost(ctx) : (ch.cost || 0)));
+  function choicesFor(def, rec) {
+    return (def.choices || []).map((c, i) => {
+      const cost = (rec.costs && rec.costs[i] != null) ? rec.costs[i] : 0;
+      return { index: i, label: c.label, cost, desc: c.desc, affordable: S().coins >= cost };
+    });
+  }
+  function logEntry(def, rec, text) {
+    const s = ensure();
+    s.eventLog.push({ key: def.key, name: def.name, emoji: def.emoji, kind: def.kind, at: rec.startAt, text });
+    while (s.eventLog.length > 30) s.eventLog.shift();
+    s.stats.eventsSeen++;
+  }
+  function removeActive(rec) {
+    const a = S().activeEvents, i = a.indexOf(rec);
+    if (i >= 0) a.splice(i, 1);
+  }
+
+  function startEvent(def) {
+    const s = ensure(), now = U.now();
+    const rec = { id: U.uid(), key: def.key, startAt: now, endAt: now + (def.durationSec || 0) * 1000 };
+    const ctx = makeCtx(def, rec);
+    rec.k = Math.round(ctx.k * 1000) / 1000;
+    if (ctx.mitigated) rec.mit = 1;
+    if (ctx.amplified) rec.amp = 1;
+    if (ctx.soft) rec.soft = 1;
+    const hasChoices = !!(def.choices && def.choices.length);
+    if (hasChoices) {
+      rec.pending = true; rec.endAt = now + CHOICE_SEC * 1000;
+      rec.costs = def.choices.map(c => costOf(c, ctx));
+    }
+    try { ctx.result = (def.onStart && def.onStart(ctx)) || {}; } catch (e) { console.error('[events] onStart', def.key, e); ctx.result = {}; }
+    let text = '';
+    try { text = def.text(ctx); } catch (e) { console.error('[events] text', def.key, e); text = def.desc || def.name; }
+    if (ctx.mitigated) text += ' 🛡️ Your ' + (TAG_NAMES[ctx.mitTag] || ctx.mitTag) + ' cut the damage in half.';
+    if (ctx.amplified) text += ' ✨ Your ' + (TAG_NAMES[ctx.ampTag] || ctx.ampTag) + ' amplified the benefit!';
+    if (hasChoices || (def.durationSec || 0) > 0) s.activeEvents.push(rec);
+    logEntry(def, rec, text);
+    G.toast(def.emoji + ' ' + def.name + (hasChoices ? ': decide now!' : ': ' + text), def.kind);
+    G.bus.emit('event:start', { event: rec, def, text, choices: hasChoices ? choicesFor(def, rec) : undefined, result: ctx.result });
+    G.bus.emit('change');
+    return rec;
+  }
+
+  function resolveChoice(rec, def, idx, auto) {
+    const ch = def.choices && def.choices[idx]; if (!ch) return false;
+    const ctx = ctxFor(def, rec);
+    let res;
+    try { res = ch.apply(ctx); } catch (e) { console.error('[events] choice', def.key, e); res = null; }
+    let text = (res && typeof res === 'object') ? res.text : res;
+    text = text || ch.label;
+    if (auto) text = 'No decision in time. ' + text;
+    rec.pending = false; rec.ci = idx; delete rec.costs;
+    const dur = (ch.durationSec != null ? ch.durationSec : def.durationSec) || 0;
+    const keep = dur > 0;
+    if (keep) rec.endAt = U.now() + dur * 1000;
+    const s = S();
+    for (let i = s.eventLog.length - 1; i >= 0; i--) {
+      const e = s.eventLog[i];
+      if (e.key === def.key && e.at === rec.startAt) { e.text += ' → ' + text; e.choice = ch.label; break; }
+    }
+    G.toast(def.emoji + ' ' + text, def.kind === 'bad' && /spared|dried|protected|back before|held/.test(text) ? 'good' : def.kind);
+    if (!keep) removeActive(rec);
+    G.bus.emit('event:choice', { event: rec, def, choice: idx, text, auto: !!auto });
+    if (!keep) G.bus.emit('event:end', { event: rec, def });
+    G.bus.emit('change');
+    return true;
+  }
+
+  function choose(id, idx) {
+    try {
+      ensure();
+      const rec = S().activeEvents.find(r => r.id === id);
+      if (!rec || !rec.pending) return false;
+      const def = DEF[rec.key]; if (!def || !def.choices) return false;
+      idx = Number(idx);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= def.choices.length) return false;
+      const cost = (rec.costs && rec.costs[idx]) || 0;
+      if (cost > 0 && !G.spend(cost)) return false;
+      return resolveChoice(rec, def, idx, false);
+    } catch (e) { console.error('[events] choose', e); return false; }
+  }
+
+  // ---------- scheduler ----------
+  function season() { try { return G.calendar().season; } catch (e) { return 'spring'; } }
+  function eligible(def, seas, level) {
+    if (!(def.weight > 0)) return false;
+    if (def.seasons && def.seasons.length && def.seasons.indexOf(seas) < 0) return false;
+    if ((def.minLevel || 1) > level) return false;
+    const s = S();
+    if (s.flags['events.lastKey'] === def.key) return false;
+    if (s.activeEvents.some(r => r.key === def.key)) return false;
+    if (def.requires) { try { if (!def.requires()) return false; } catch (e) { return false; } }
+    return true;
+  }
+  function pickDef() {
+    const level = S().level || 1, seas = season(), soft = level <= 2;
+    const recent = S().eventLog.slice(-2);
+    const twoBad = recent.length === 2 && recent.every(e => e.kind === 'bad');
+    const twoGood = recent.length === 2 && recent.every(e => e.kind === 'good');
+    const pool = defs.filter(d => eligible(d, seas, level));
+    return U.weightedPick(pool, d => {
+      let w = d.weight;
+      if (d.kind === 'bad') { if (soft) w *= 0.5; if (twoBad) w *= 0.35; }
+      else { if (soft) w *= 1.6; if (twoGood) w *= 0.6; }
+      return w;
+    });
+  }
+  function expire(now) {
+    S().activeEvents.slice().forEach(rec => {
+      const def = DEF[rec.key];
+      if (!def) { removeActive(rec); return; }
+      if (now < rec.endAt) return;
+      if (rec.pending) { resolveChoice(rec, def, def.choices.length - 1, true); return; }
+      removeActive(rec);
+      G.bus.emit('event:end', { event: rec, def });
+      G.bus.emit('change');
+    });
+  }
+  function schedule(now) {
+    const s = S(), f = s.flags;
+    if (!f['events.nextAt']) f['events.nextAt'] = Math.max(s.startedAt + 60000, now) + U.rand(25000, 90000);
+    if (now < f['events.nextAt']) return;
+    if (now - s.startedAt < 60000) { f['events.nextAt'] = s.startedAt + 60000 + U.rand(5000, 30000); return; }
+    if (s.activeEvents.length >= MAX_ACTIVE) { f['events.nextAt'] = now + 20000; return; }
+    const def = pickDef();
+    if (!def) { f['events.nextAt'] = now + 30000; return; }
+    f['events.nextAt'] = now + U.rand(120000, 240000);
+    f['events.lastKey'] = def.key;
+    startEvent(def);
+  }
+
+  G.bus.on('tick', p => {
+    try {
+      ensure();
+      const now = (p && p.now) || U.now();
+      expire(now);
+      schedule(now);
+    } catch (e) { console.error('[events] tick', e); }
+  });
+
+  G.bus.on('init', () => {
+    try {
+      const s = ensure(), now = U.now();
+      s.activeEvents = s.activeEvents.filter(r => r && DEF[r.key] && (r.pending || now < r.endAt));
+      s.activeEvents.slice().forEach(rec => {
+        if (!rec.pending) return;
+        const def = DEF[rec.key];
+        if (now >= rec.endAt) { resolveChoice(rec, def, def.choices.length - 1, true); return; }
+        setTimeout(() => {
+          try { if (rec.pending) G.bus.emit('event:start', { event: rec, def, text: def.text(ctxFor(def, rec)), choices: choicesFor(def, rec), resumed: true }); } catch (e) { console.error(e); }
+        }, 50);
+      });
+      const f = s.flags;
+      if (!f['events.nextAt'] || f['events.nextAt'] < now) f['events.nextAt'] = Math.max(s.startedAt + 60000, now) + U.rand(25000, 75000);
+    } catch (e) { console.error('[events] init', e); }
+  });
+
+  // ---------- public API ----------
+  G.Events = {
+    definitions: defs,
+    growthMult: key => combined('growth', key),
+    yieldMult: key => combined('yield', key),
+    animalMult: key => combined('animal', key),
+    priceMult: key => combined('price', key),
+    active() { ensure(); const now = U.now(); return S().activeEvents.filter(r => r && DEF[r.key] && (r.pending || now < r.endAt)); },
+    pending() { return G.Events.active().filter(r => r.pending); },
+    def: key => DEF[key] || null,
+    trigger(key) {
+      const def = DEF[key]; if (!def) return null;
+      ensure();
+      S().activeEvents.filter(r => r.key === key).forEach(removeActive);
+      S().flags['events.lastKey'] = key;
+      try { return startEvent(def); } catch (e) { console.error('[events] trigger', key, e); return null; }
+    },
+    choose,
+    describeMods,
+    timeLeft
+  };
+})();
+
+</script>
+<script>/* ---- economy.js ---- */
+/* economy.js — Kellyville economy: order board, market, shop catalog, level rewards, daily bonus.
+   Fully data-driven from G.DATA at runtime. Exposes G.Economy. */
+(function () {
+  'use strict';
+  const G = window.G;
+  const U = G.util;
+
+  const SLOTS = 6;
+  const FULFILL_COOLDOWN = 20000;
+  const DISCARD_COOLDOWN = 30000;
+  const EXPRESS_CHANCE = 0.2;
+  const MARKET_MIN = 0.8, MARKET_MAX = 1.25;
+  const PREV_KEY = 'economy.prevMarket';
+  const CHANGE_THROTTLE = 3000;
+
+  const CUSTOMERS = [
+    { name: 'Spokane Farmers Market', emoji: '🧺', region: 'spokane' },
+    { name: 'Walla Walla Winery', emoji: '🍷', region: 'walla_walla' },
+    { name: 'Yakima Brewing Co.', emoji: '🍺', region: 'yakima' },
+    { name: 'Moscow Food Co-op', emoji: '🥬', region: 'palouse' },
+    { name: 'Ellensburg Rodeo Grounds', emoji: '🤠', region: 'ellensburg' },
+    { name: 'Tri-Cities Taqueria', emoji: '🌮', region: 'tri_cities' },
+    { name: 'Wenatchee Packing House', emoji: '📦', region: 'wenatchee' },
+    { name: 'Grandma June in Colfax', emoji: '👵', region: 'palouse' },
+    { name: 'Pullman Cougar Diner', emoji: '🐾', region: 'palouse' },
+    { name: 'Moses Lake Fish & Chips', emoji: '🍟', region: 'columbia_basin' },
+    { name: 'Ritzville Grain Elevator', emoji: '🏭', region: 'columbia_basin' },
+    { name: 'Leavenworth Bavarian Bakery', emoji: '🥨', region: 'wenatchee' },
+    { name: 'Prosser Wine Bar', emoji: '🍇', region: 'yakima' },
+    { name: 'Cle Elum Trailside Cafe', emoji: '☕', region: 'ellensburg' },
+    { name: 'Kennewick Hanford Hotdogs', emoji: '🌭', region: 'tri_cities' },
+    { name: 'Spokane Gonzaga Boosters', emoji: '🏀', region: 'spokane' },
+    { name: 'Dayton Depot Deli', emoji: '🥪', region: 'walla_walla' },
+    { name: 'Chelan Lakeside Lodge', emoji: '🏞️', region: 'wenatchee' }
+  ];
+
+  const D = () => (G.DATA || {});
+  const dict = k => (D()[k] && typeof D()[k] === 'object') ? D()[k] : {};
+  const now = () => U.now();
+  const st = () => G.state;
+
+  // ---------- helpers ----------
+  function baseValue(key) {
+    const info = (G.itemInfo ? G.itemInfo(key) : null) || {};
+    return Math.max(1, Number(info.sellPrice) || 1);
+  }
+  function itemLabel(key) {
+    const i = (G.itemInfo ? G.itemInfo(key) : null) || {};
+    return ((i.emoji || '') + ' ' + (i.name || key)).trim();
+  }
+
+  // Everything the player could currently produce (key -> true).
+  function producibleKeys() {
+    const s = st(), lvl = s.level || 1, out = new Set();
+    const crops = dict('crops'), animals = dict('animals'), buildings = dict('buildings');
+    Object.keys(crops).forEach(k => { if (lvl >= (crops[k].level || 1)) out.add(k); });
+    (s.animals || []).forEach(an => {
+      const a = animals[an && an.type];
+      if (a && a.product && lvl >= (a.level || 1)) out.add(a.product);
+    });
+    (s.buildings || []).forEach(b => {
+      const def = buildings[b && b.type];
+      if (!def || !Array.isArray(def.recipes)) return;
+      def.recipes.forEach(r => { if (r && r.output && lvl >= (r.level || 1)) out.add(r.output); });
+    });
+    return Array.from(out);
+  }
+  function signature() { return producibleKeys().sort().join('|'); }
+
+  // ---------- orders ----------
+  function emptySlot(id, cooldownUntil) {
+    return {
+      id: id || U.uid(), customer: '', customerEmoji: '', region: '', items: {},
+      coins: 0, xp: 0, createdAt: now(), expiresAt: null, cooldownUntil: cooldownUntil == null ? null : cooldownUntil
+    };
+  }
+  function isEmptySlot(o) { return !o || !o.items || Object.keys(o.items).length === 0; }
+
+  function pickCustomer(items) {
+    const crops = dict('crops');
+    const regions = {};
+    Object.keys(items).forEach(k => { const r = crops[k] && crops[k].region; if (r) regions[r] = true; });
+    const taken = new Set((st().orders || []).map(o => o && o.customer));
+    const c = U.weightedPick(CUSTOMERS, cu => (regions[cu.region] ? 4 : 1) * (taken.has(cu.name) ? 0.25 : 1));
+    return c || CUSTOMERS[0];
+  }
+
+  function buildOrder(existing) {
+    const pool = producibleKeys();
+    if (!pool.length) return null;
+    const lvl = st().level || 1;
+    // keys already requested by other open orders -> de-emphasise to add variety
+    const used = {};
+    (existing || []).forEach(o => { if (o && o.items) Object.keys(o.items).forEach(k => { used[k] = (used[k] || 0) + 1; }); });
+
+    const want = Math.min(pool.length, U.weightedPick([1, 2, 3], n => (n === 1 ? 3 : n === 2 ? 3 : (lvl >= 3 ? 2 : 0.5))) || 1);
+    const chosen = [];
+    const left = pool.slice();
+    while (chosen.length < want && left.length) {
+      const k = U.weightedPick(left, key => 1 / (1 + (used[key] || 0) * 1.5));
+      if (!k) break;
+      chosen.push(k); left.splice(left.indexOf(k), 1);
+    }
+    if (!chosen.length) return null;
+
+    const cap = U.clamp(2 + Math.floor(lvl / 2), 2, 10) * (chosen.length > 1 ? 0.75 : 1);
+    const items = {};
+    let sum = 0;
+    chosen.forEach(k => {
+      const price = baseValue(k);
+      const f = U.clamp(25 / price, 0.3, 1.5);
+      const maxQ = Math.max(1, Math.round(cap * f));
+      const q = U.randInt(1, maxQ);
+      items[k] = q; sum += price * q;
+    });
+
+    const express = Math.random() < EXPRESS_CHANCE;
+    const mult = U.rand(1.25, 1.6) * (express ? 1.4 : 1);
+    const coins = Math.max(1, Math.round(sum * mult));
+    const xp = Math.max(1, Math.round(sum * mult * 0.2));
+    const cust = pickCustomer(items);
+    const t = now();
+    return {
+      id: U.uid(), customer: cust.name, customerEmoji: cust.emoji, region: cust.region,
+      items, coins, xp, createdAt: t,
+      expiresAt: express ? t + Math.round(U.rand(180, 300)) * 1000 : null,
+      cooldownUntil: null, express
+    };
+  }
+
+  function ensureOrdersArray() {
+    const s = st();
+    if (!Array.isArray(s.orders)) s.orders = [];
+    s.orders = s.orders.filter(o => o && typeof o === 'object');
+    while (s.orders.length < SLOTS) s.orders.push(emptySlot(null, now()));
+    if (s.orders.length > SLOTS) s.orders.length = SLOTS;
+  }
+
+  // Fill slots that are empty and not cooling down. Returns number generated.
+  function fillSlots() {
+    ensureOrdersArray();
+    const s = st(), t = now();
+    let n = 0;
+    s.orders.forEach((o, i) => {
+      if (!isEmptySlot(o)) return;
+      if (o.cooldownUntil && o.cooldownUntil > t) return;
+      const neu = buildOrder(s.orders.filter((x, j) => j !== i && !isEmptySlot(x)));
+      if (!neu) { o.cooldownUntil = t + 5000; return; } // nothing producible yet; retry shortly
+      s.orders[i] = neu; n++;
+      G.bus.emit('order:new', { order: neu, slot: i });
+    });
+    if (n) G.bus.emit('change');
+    return n;
+  }
+
+  function findIdx(id) { return (st().orders || []).findIndex(o => o && o.id === id); }
+  function isExpired(o) { return !!(o && o.expiresAt && now() >= o.expiresAt); }
+
+  function canFulfill(id) {
+    const o = (st().orders || []).find(x => x && x.id === id);
+    if (!o || isEmptySlot(o) || o.cooldownUntil || isExpired(o)) return false;
+    return G.hasItems(o.items);
+  }
+
+  function toCooldown(i, ms) {
+    const o = st().orders[i];
+    st().orders[i] = emptySlot(o && o.id, now() + ms);
+  }
+
+  function fulfill(id) {
+    const i = findIdx(id);
+    if (i < 0 || !canFulfill(id)) return false;
+    const o = st().orders[i];
+    if (!G.removeItems(o.items)) return false;
+    const { coins, xp, customer } = o;
+    st().stats.ordersDone = (st().stats.ordersDone || 0) + 1;
+    toCooldown(i, FULFILL_COOLDOWN);           // before paying, so levelup refills see correct state
+    G.addCoins(coins, 'order');
+    G.bus.emit('order:done', { order: o, coins, xp, customer, slot: i });
+    G.addXP(xp);
+    G.bus.emit('change');
+    return true;
+  }
+
+  function discard(id) {
+    const i = findIdx(id);
+    if (i < 0) return false;
+    const o = st().orders[i];
+    if (isEmptySlot(o) || o.cooldownUntil) return false;
+    toCooldown(i, DISCARD_COOLDOWN);
+    G.bus.emit('change');
+    return true;
+  }
+
+  function ordersTick() {
+    ensureOrdersArray();
+    const t = now(); let changed = false;
+    st().orders.forEach((o, i) => {
+      if (o.cooldownUntil && t >= o.cooldownUntil) {
+        st().orders[i] = emptySlot(o.id, null); changed = true; // ready for refill
+      } else if (!o.cooldownUntil && o.expiresAt && t >= o.expiresAt) {
+        if (G.toast) G.toast('The ' + (o.customer || 'express') + ' order expired.', 'info');
+        st().orders[i] = emptySlot(o.id, null); changed = true;
+      }
+    });
+    if (fillSlots() || changed) G.bus.emit('change');
+  }
+
+  // ---------- market ----------
+  function marketKeys() { return Object.keys(dict('crops')).concat(Object.keys(dict('products'))); }
+  function r3(v) { return Math.round(v * 1000) / 1000; }
+
+  function ensureMarket() {
+    const s = st();
+    if (!s.market || typeof s.market !== 'object') s.market = {};
+    marketKeys().forEach(k => {
+      if (typeof s.market[k] !== 'number' || !isFinite(s.market[k])) s.market[k] = r3(U.rand(0.95, 1.05));
+    });
+    if (!s.flags) s.flags = {};
+    if (!s.flags[PREV_KEY]) s.flags[PREV_KEY] = Object.assign({}, s.market);
+  }
+
+  function refreshMarket() {
+    ensureMarket();
+    const s = st();
+    s.flags[PREV_KEY] = Object.assign({}, s.market);
+    marketKeys().forEach(k => {
+      const m = s.market[k];
+      const next = m + (1 - m) * 0.2 + U.rand(-0.09, 0.09); // mean-reverting random walk
+      s.market[k] = r3(U.clamp(next, MARKET_MIN, MARKET_MAX));
+    });
+    G.bus.emit('market:update', { market: s.market });
+    G.bus.emit('change');
+  }
+
+  function trend(key) {
+    const s = st();
+    const prev = s.flags && s.flags[PREV_KEY];
+    const cur = s.market && s.market[key];
+    if (!prev || typeof prev[key] !== 'number' || typeof cur !== 'number') return 'flat';
+    const d = cur - prev[key];
+    return d > 0.015 ? 'up' : d < -0.015 ? 'down' : 'flat';
+  }
+
+  // ---------- shop ----------
+  function shopCatalog() {
+    const s = st(), lvl = s.level || 1, coins = s.coins || 0;
+    const byLvl = (a, b) => (a.def.level || 1) - (b.def.level || 1) || (a.def.cost || 0) - (b.def.cost || 0);
+
+    const animals = Object.keys(dict('animals')).map(key => {
+      const def = dict('animals')[key];
+      const count = (s.animals || []).filter(a => a && a.type === key).length;
+      const max = def.max || 6;
+      const locked = lvl < (def.level || 1);
+      const maxed = count >= max;
+      return { key, def, level: def.level || 1, locked, count, max, maxed, affordable: !locked && !maxed && coins >= (def.cost || 0) };
+    }).sort(byLvl);
+
+    const buildings = Object.keys(dict('buildings')).map(key => {
+      const def = dict('buildings')[key];
+      const owned = (s.buildings || []).some(b => b && b.type === key);
+      const locked = lvl < (def.level || 1);
+      return { key, def, level: def.level || 1, locked, owned, affordable: !locked && !owned && coins >= (def.cost || 0) };
+    }).sort(byLvl);
+
+    const owns = k => (s.ownedExpansions || []).includes(k);
+    const expansions = Object.keys(dict('expansions')).map(key => {
+      const def = dict('expansions')[key];
+      const owned = owns(key);
+      const reqMissing = !!(def.requires && !owns(def.requires));
+      const locked = !owned && (lvl < (def.level || 1) || reqMissing);
+      return {
+        key, def, level: def.level || 1, locked, owned, requires: def.requires || null, reqMissing,
+        affordable: !owned && !locked && coins >= (def.cost || 0)
+      };
+    }).sort(byLvl);
+
+    const cost = G.plotCost ? G.plotCost() : 0;
+    const available = (s.plots || []).length < (s.maxPlots || 0);
+    return { animals, buildings, expansions, plot: { cost, available, affordable: available && coins >= cost } };
+  }
+
+  // ---------- level rewards ----------
+  function unlocksAt(level) {
+    const out = { crops: [], animals: [], buildings: [], expansions: [] };
+    ['crops', 'animals', 'buildings', 'expansions'].forEach(cat => {
+      const d = dict(cat);
+      Object.keys(d).forEach(k => { if ((d[k].level || 1) === level) out[cat].push(k); });
+    });
+    return out;
+  }
+
+  function onLevelUp(p) {
+    const level = (p && p.level) || st().level;
+    const reward = 50 * level;
+    G.addCoins(reward, 'levelup');
+    const u = unlocksAt(level);
+    const names = [];
+    const add = (cat, list) => list.forEach(k => { const d = dict(cat)[k]; names.push(((d.emoji || '') + ' ' + (d.name || k)).trim()); });
+    add('crops', u.crops); add('animals', u.animals); add('buildings', u.buildings); add('expansions', u.expansions);
+    let msg = 'Level ' + level + '! +' + reward + ' coins';
+    if (names.length) msg += '. Unlocked: ' + names.join(', ');
+    G.toast(msg, 'good');
+    fillSlots();
+  }
+
+  // ---------- daily ----------
+  function onNewDay(cal) {
+    refreshMarket();
+    const day = (cal && cal.day) || G.calendar().day;
+    if (day % 3 === 0) {
+      const gift = 15 + 5 * (st().level || 1);
+      G.addCoins(gift, 'dividend');
+      G.toast('The co-op dividend arrived: +' + gift + ' coins', 'good');
+    }
+  }
+
+  // ---------- wiring ----------
+  let lastChange = 0, lastSig = null;
+  function setup() {
+    ensureMarket();
+    ensureOrdersArray();
+    lastSig = signature();
+    fillSlots();
+  }
+  const safe = fn => function (p) { try { fn(p); } catch (e) { console.error('[economy]', e); } };
+
+  G.bus.on('init', safe(setup));
+  G.bus.on('state:reset', safe(setup));
+  G.bus.on('tick', safe(ordersTick));
+  G.bus.on('newday', safe(onNewDay));
+  G.bus.on('levelup', safe(onLevelUp));
+  G.bus.on('change', safe(() => {
+    const t = now();
+    if (t - lastChange < CHANGE_THROTTLE) return;
+    lastChange = t;
+    const sig = signature();
+    if (sig !== lastSig) { lastSig = sig; fillSlots(); }
+  }));
+
+  G.Economy = {
+    orders: () => { try { ensureOrdersArray(); } catch (e) { } return st().orders; },
+    fulfill: safe2(fulfill), discard: safe2(discard), canFulfill: safe2(canFulfill),
+    refreshMarket: safe2(refreshMarket), shopCatalog,
+    trend, unlocksAt, producibleKeys,
+    constants: { SLOTS, FULFILL_COOLDOWN, DISCARD_COOLDOWN }
+  };
+  function safe2(fn) { return function () { try { return fn.apply(null, arguments); } catch (e) { console.error('[economy]', e); return false; } }; }
+})();
+
+</script>
+<script>/* ---- ui.js ---- */
+/* ui.js — Kellyville UI: rendering, input, toasts, modals, atmosphere. */
+(function () {
+  'use strict';
+  const G = window.G;
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmt = n => Math.round(n || 0).toLocaleString('en-US');
+  const fmtT = sec => String((G.util && G.util.fmtTime ? G.util.fmtTime(sec) : Math.ceil(sec) + 's')).trim();
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const D = () => G.DATA || {};
+  const S = () => G.state;
+  const dget = (cat, k) => (D()[cat] || {})[k];
+  const iEmoji = k => (G.itemInfo ? G.itemInfo(k).emoji : '📦') || '📦';
+  const iName = k => (G.itemInfo ? G.itemInfo(k).name : k) || k;
+  const AVATARS = ['🧑‍🌾', '👩‍🌾', '👨‍🌾', '🤠', '👵', '👴', '🧒', '🐕'];
+
+  const UI = (G.ui = { tab: 'farm', shopTab: 'animals', sheet: null, modals: [], cur: null, seedAll: false, tapRect: null, tapAt: 0, pending: false, sig: {}, flySeq: 0, tfx: null });
+
+  // ---------- toast (installed at load so early toasts are caught) ----------
+  G.toast = function (msg, kind) {
+    try {
+      const box = $('#toasts');
+      if (!box) { console.log('[toast]', kind || '', msg); return; }
+      const t = document.createElement('div');
+      t.className = 'toast ' + (kind || 'info');
+      t.textContent = msg;
+      box.appendChild(t);
+      while (box.children.length > 4) box.firstChild.remove();
+      setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 320); }, 2500);
+    } catch (e) { console.error(e); }
+  };
+
+  // ---------- small helpers ----------
+  function patchChildren(box, htmls) {
+    if (!box) return;
+    const kids = box.children;
+    htmls.forEach((h, i) => {
+      const cur = kids[i];
+      if (cur && cur._h === h) return;
+      const t = document.createElement('template'); t.innerHTML = h.trim();
+      const n = t.content.firstElementChild; if (!n) return; n._h = h;
+      if (cur) box.replaceChild(n, cur); else box.appendChild(n);
+    });
+    while (box.children.length > htmls.length) box.lastElementChild.remove();
+  }
+  function setHTML(el, html) { if (el && el._h !== html) { el.innerHTML = html; el._h = html; } }
+  function setText(el, t) { if (el && el.textContent !== t) el.textContent = t; }
+  function avatar() { return (S().flags && S().flags['ui.avatar']) || AVATARS[0]; }
+  function pname() { return G.playerName ? G.playerName() : 'Farmer'; }
+  const tm = (type, start, end, extra) => `data-tm="${type}" data-start="${Math.round(start || 0)}" data-end="${Math.round(end || 0)}"${extra || ''}`;
+  function needChips(req) {
+    return Object.entries(req || {}).map(([k, q]) => {
+      const have = G.qty(k);
+      return `<span class="need ${have >= q ? 'ok' : 'no'}">${esc(iEmoji(k))} <b>${have}</b>/${q}</span>`;
+    }).join('');
+  }
+  function evDef(key) {
+    try { if (G.Events && G.Events.def) { const d = G.Events.def(key); if (d) return d; } } catch (e) { }
+    const defs = G.Events && G.Events.definitions;
+    if (Array.isArray(defs)) return defs.find(d => d.key === key) || null;
+    return null;
+  }
+  function activeEvents() {
+    try { if (G.Events && G.Events.active) return G.Events.active() || []; } catch (e) { }
+    return (S().activeEvents || []);
+  }
+
+  // ---------- flying text ----------
+  function fly(html, from, toEl, opt) {
+    opt = opt || {};
+    const layer = $('#float-layer');
+    if (!layer || !from || !layer.appendChild) return;
+    const el = document.createElement('div');
+    el.className = 'fly ' + (opt.cls || '');
+    el.innerHTML = html; layer.appendChild(el);
+    const sx = from.left + from.width / 2, sy = from.top + from.height / 2;
+    el.style.left = sx + 'px'; el.style.top = sy + 'px';
+    const tr = toEl ? toEl.getBoundingClientRect() : null;
+    const dx = tr ? tr.left + tr.width / 2 - sx : 0, dy = tr ? tr.top + tr.height / 2 - sy : -90;
+    if (!el.animate) { setTimeout(() => el.remove(), 900); return; }
+    const a = el.animate([
+      { transform: 'translate(-50%,-50%) scale(.6)', opacity: 0, offset: 0 },
+      { transform: 'translate(-50%,-110%) scale(1.15)', opacity: 1, offset: .2 },
+      { transform: `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.5)`, opacity: .2, offset: 1 }
+    ], { duration: opt.dur || 950, delay: opt.delay || 0, easing: 'cubic-bezier(.35,.1,.3,1)', fill: 'both' });
+    a.onfinish = () => { el.remove(); if (toEl && opt.bump !== false) bump(toEl); };
+  }
+  function bump(el) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+  function tapOrigin() {
+    if (UI.tapRect && Date.now() - UI.tapAt < 2000) return UI.tapRect;
+    return { left: innerWidth / 2 - 10, top: innerHeight * 0.55, width: 20, height: 20 };
+  }
+  function confetti() {
+    const box = $('#confetti'); if (!box || !box.animate) return;
+    const cols = ['#ff5a4d', '#ffc83d', '#5fd04a', '#4aa3e0', '#c06cf0', '#fff'];
+    for (let i = 0; i < 80; i++) {
+      const c = document.createElement('i'); c.className = 'cf';
+      const x = Math.random() * innerWidth;
+      c.style.left = x + 'px'; c.style.background = cols[i % cols.length];
+      c.style.width = (6 + Math.random() * 8) + 'px'; c.style.height = (8 + Math.random() * 10) + 'px';
+      box.appendChild(c);
+      const dur = 1800 + Math.random() * 1800, drift = (Math.random() - .5) * 220;
+      const a = c.animate([
+        { transform: 'translate(0,-20px) rotate(0)', opacity: 1 },
+        { transform: `translate(${drift}px,${innerHeight + 40}px) rotate(${Math.random() * 900 - 450}deg)`, opacity: .9 }
+      ], { duration: dur, delay: Math.random() * 500, easing: 'cubic-bezier(.3,.6,.5,1)', fill: 'both' });
+      a.onfinish = () => c.remove();
+    }
+  }
+
+  // ---------- sky / season ----------
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const mix = (a, b, t) => a.map((v, i) => lerp(v, b[i], t));
+  const DAYSKY = {
+    spring: { top: [110, 190, 240], bot: [215, 240, 255] }, summer: { top: [58, 150, 235], bot: [190, 230, 255] },
+    fall: { top: [130, 168, 205], bot: [255, 222, 168] }, winter: { top: [150, 175, 200], bot: [232, 240, 246] }
+  };
+  function skyAt(season, p) {
+    const day = DAYSKY[season] || DAYSKY.spring;
+    const K = {
+      night: { top: [22, 30, 74], bot: [64, 54, 118], sh: [8, 12, 44, .48], st: 1 },
+      dawn: { top: [124, 120, 196], bot: [255, 178, 128], sh: [255, 140, 80, .14], st: .3 },
+      day: { top: day.top, bot: day.bot, sh: [255, 255, 255, 0], st: 0 },
+      dusk: { top: [92, 82, 164], bot: [255, 138, 88], sh: [255, 110, 60, .18], st: .3 }
+    };
+    const F = [[0, 'night'], [.08, 'night'], [.18, 'dawn'], [.3, 'day'], [.62, 'day'], [.74, 'dusk'], [.86, 'night'], [1, 'night']];
+    let i = 0; while (i < F.length - 2 && p > F[i + 1][0]) i++;
+    const a = F[i], b = F[i + 1], t = clamp((p - a[0]) / (b[0] - a[0]), 0, 1), A = K[a[1]], B = K[b[1]];
+    return { top: mix(A.top, B.top, t), bot: mix(A.bot, B.bot, t), sh: mix(A.sh, B.sh, t), st: lerp(A.st, B.st, t) };
+  }
+  const rgb = c => `rgb(${c.slice(0, 3).map(Math.round).join(',')})`;
+  function updateSky(cal) {
+    cal = cal || G.calendar();
+    const app = $('#app'), sc = $('#scene'); if (!app || !sc) return;
+    if (app.dataset.season !== cal.season) app.dataset.season = cal.season;
+    const s = skyAt(cal.season, (cal.dayProgress + .22) % 1);
+    sc.style.setProperty('--sky-top', rgb(s.top)); sc.style.setProperty('--sky-bot', rgb(s.bot));
+    sc.style.setProperty('--shade', `rgba(${s.sh.slice(0, 3).map(Math.round).join(',')},${s.sh[3].toFixed(3)})`);
+    sc.style.setProperty('--stars', s.st.toFixed(2));
+    const p = (cal.dayProgress + .22) % 1, orb = $('#orb'); if (!orb) return;
+    let t = -1, ch = '☀️';
+    if (p >= .1 && p <= .74) { t = (p - .1) / .64; ch = '☀️'; }
+    else { const q = p < .5 ? p + 1 : p; if (q >= .74 && q <= 1.12) { t = (q - .74) / .38; ch = '🌙'; } }
+    if (t < 0) { orb.style.opacity = 0; return; }
+    const W = Math.min(innerWidth, 480);
+    orb.style.opacity = 1; setText(orb, ch);
+    orb.style.transform = `translate(${(-W / 2 + 24 + t * (W - 60)).toFixed(0)}px,${(-Math.sin(Math.PI * t) * 100).toFixed(0)}px)`;
+  }
+  function updateSeasonChip(cal) {
+    cal = cal || G.calendar();
+    const si = (G.SEASON_INFO || {})[cal.season] || { name: cal.season, emoji: '' };
+    setText($('#hud-season'), `${si.emoji} ${si.name} · Day ${cal.dayOfSeason}` + (cal.year > 1 ? ` · Yr ${cal.year}` : ''));
+  }
+
+  // ---------- weather / event atmosphere ----------
+  const FX_RULES = [['dust', /dust|wind|chinook/], ['smoke', /smoke|fire/], ['hail', /hail/], ['rain', /rain/], ['frost', /frost|freeze/], ['heat', /heat|drought/], ['snow', /snow/]];
+  function fxFor(key, def) {
+    const out = [], k = (key || '').toLowerCase();
+    FX_RULES.forEach(([n, re]) => { if (re.test(k)) out.push(n); });
+    if (!out.length && def && def.kind === 'good') out.push('sun');
+    return out;
+  }
+  function buildFxParticles() {
+    const mk = (cls, n, fn) => { const l = $('.' + cls); if (!l || l.children.length) return; for (let i = 0; i < n; i++) { const e = fn(i); l.appendChild(e); } };
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    mk('l-rain', 34, () => { const e = document.createElement('i'); e.style.left = rnd(0, 110) + '%'; e.style.animationDuration = rnd(.55, .9) + 's'; e.style.animationDelay = -rnd(0, 1) + 's'; return e; });
+    mk('l-hail', 22, () => { const e = document.createElement('i'); e.style.left = rnd(0, 120) + '%'; e.style.animationDuration = rnd(.7, 1.1) + 's'; e.style.animationDelay = -rnd(0, 1) + 's'; return e; });
+    mk('l-snow', 30, () => { const e = document.createElement('i'); const s = rnd(4, 9); e.style.width = e.style.height = s + 'px'; e.style.left = rnd(0, 100) + '%'; e.style.animationDuration = rnd(5, 10) + 's'; e.style.animationDelay = -rnd(0, 8) + 's'; return e; });
+    mk('l-frost', 16, i => { const e = document.createElement('b'); e.textContent = i % 3 ? '✦' : '❄'; e.style.left = rnd(2, 94) + '%'; e.style.top = rnd(4, 90) + '%'; e.style.fontSize = rnd(12, 26) + 'px'; e.style.animationDelay = -rnd(0, 2) + 's'; e.style.animationDuration = rnd(1.4, 3) + 's'; return e; });
+  }
+  function updateFX() {
+    const fx = $('#fx'); if (!fx) return;
+    // Show only ONE atmosphere at a time (the newest) so the farm stays readable.
+    let pick = null;
+    if (UI.tfx) { if (Date.now() < UI.tfx.until && UI.tfx.list.length) pick = UI.tfx.list[0]; else if (Date.now() >= UI.tfx.until) UI.tfx = null; }
+    if (!pick) {
+      const recs = activeEvents().filter(r => !r.pending).slice().sort((a, b) => (b.startAt || 0) - (a.startAt || 0));
+      for (const rec of recs) { const def = evDef(rec.key); const l = fxFor(rec.key + ' ' + ((def && def.key) || ''), def); if (l.length) { pick = l[0]; break; } }
+    }
+    const cls = 'fx' + (pick ? ' ' + pick : '');
+    if (fx.className !== cls) fx.className = cls;
+  }
+
+  // ---------- HUD ----------
+  function renderHUD() {
+    const s = S(); if (!s) return;
+    setText($('#hud-coins'), fmt(s.coins));
+    setText($('#hud-lvl-num'), String(s.level));
+    const need = G.xpForLevel(s.level), pct = clamp(s.xp / need * 100, 0, 100);
+    const ring = $('#hud-ring'); if (ring) ring.style.setProperty('--p', pct.toFixed(1));
+    const xb = $('#hud-xpbar'); if (xb) xb.style.width = pct.toFixed(1) + '%';
+    setText($('#hud-xp'), `${fmt(s.xp)}/${fmt(need)} XP`);
+    const cnt = G.barnCount(), cap = s.barnCap;
+    setText($('#hud-barn'), `${cnt}/${cap}`);
+    const bp = $('#hud-barn-pill'); if (bp) { bp.classList.toggle('warn', cnt / cap >= .75 && cnt < cap); bp.classList.toggle('full', cnt >= cap); }
+    setText($('#hud-av'), avatar());
+    const nm = pname(), farm = s.farmName;
+    setText($('#hud-who-txt'), s.playerName ? nm + (farm ? ' · ' + farm : '') : (farm || 'Kellyville'));
+    updateSeasonChip();
+    const hud = $('#hud'); if (hud) document.documentElement.style.setProperty('--hud-h', hud.offsetHeight + 'px');
+  }
+  function renderStrip() {
+    const strip = $('#event-strip'); if (!strip) return;
+    const now = Date.now();
+    const recs = activeEvents().filter(r => !r.pending && r.endAt > now);
+    strip.hidden = !recs.length;
+    const html = recs.map(r => {
+      const def = evDef(r.key) || {};
+      return `<button class="echip ${esc(def.kind || 'neutral')}" data-act="echip" data-id="${esc(r.id)}"><i>${esc(def.emoji || '❗')}</i><span><b>${esc(def.name || r.key)}</b><small ${tm('txt', 0, r.endAt)}></small></span></button>`;
+    }).join('');
+    if (strip._h !== html) { strip.innerHTML = html; strip._h = html; }
+  }
+
+  // ---------- Farm ----------
+  function plotHTML(p, i) {
+    const c = dget('crops', p.crop);
+    if (p.status === 'empty') return `<div class="plot empty" data-act="plot" data-i="${i}" data-plot="${i}"><span class="plus">＋</span><small>Plant</small></div>`;
+    if (p.status === 'withered') return `<div class="plot withered" data-act="plot" data-i="${i}" data-plot="${i}"><span class="pe">🥀</span><small>Tap to clear</small></div>`;
+    const em = c ? c.emoji : '🌾';
+    if (p.status === 'ready') {
+      let n = 1; try { n = Math.max(1, Math.round(c.yield * p.yieldMult * (G.mods ? G.mods.yield(p.crop) : 1))); } catch (e) { }
+      return `<div class="plot ready" data-act="plot" data-i="${i}" data-plot="${i}"><span class="yb">×${n}</span><span class="pe">${esc(em)}</span><small>Ready!</small></div>`;
+    }
+    return `<div class="plot growing" data-act="plot" data-i="${i}" data-plot="${i}"><span class="pe" ${tm('crop', p.plantedAt, p.readyAt, ` data-emoji="${esc(em)}"`)}>🌱</span><div class="pbar"><i ${tm('bar', p.plantedAt, p.readyAt)}></i></div><small ${tm('txt', 0, p.readyAt)}></small></div>`;
+  }
+  function renderPlots() {
+    const s = S(), h = s.plots.map(plotHTML);
+    if (s.plots.length < s.maxPlots) h.push(`<div class="plot buy" data-act="buyplot"><span class="plus">＋</span><small>Buy land<br>🪙 ${fmt(G.plotCost())}</small></div>`);
+    patchChildren($('#plots'), h);
+    const g = s.plots.filter(p => p.status === 'growing').length, r = s.plots.filter(p => p.status === 'ready').length;
+    setText($('#field-info'), `${s.plots.length} plots · ${g} growing${r ? ' · ' + r + ' ready' : ''}`);
+  }
+  function penHTML(a, i) {
+    const d = dget('animals', a.type) || { name: a.type, emoji: '🐾' };
+    const head = `<span class="em">${esc(d.emoji)}</span><b>${esc(d.name)}</b>`;
+    if (a.status === 'ready') return `<div class="pen ready" data-act="collect" data-i="${i}">${head}<span class="st">${esc(iEmoji(d.product))} Collect</span></div>`;
+    if (a.status === 'producing') {
+      const start = a.fedAt || (a.readyAt - (d.produceSec || 60) * 1000);
+      return `<div class="pen producing" data-act="pen-info" data-i="${i}">${head}<div class="mini"><i ${tm('bar', start, a.readyAt)}></i></div><span class="st" ${tm('txt', 0, a.readyAt)}></span></div>`;
+    }
+    const need = d.feedQty || 1, have = G.qty(d.feed);
+    return `<div class="pen hungry" data-act="feed" data-i="${i}">${head}<span class="st ${have >= need ? '' : 'lack'}">Feed ${need}× ${esc(iEmoji(d.feed))}</span></div>`;
+  }
+  function bldHTML(b, i) {
+    const d = dget('buildings', b.type) || { name: b.type, emoji: '🏭' }, now = Date.now();
+    const ready = b.queue.filter(j => j.readyAt <= now).length;
+    const cur = b.queue.find(j => j.readyAt > now);
+    let pips = '';
+    for (let k = 0; k < b.maxQueue; k++) pips += `<i class="${k < ready ? 'done' : k < b.queue.length ? 'on' : ''}"></i>`;
+    let line = '<small>Idle · tap to cook</small>';
+    if (cur) line = `<div class="mini" style="width:100%"><i ${tm('bar', cur.startAt, cur.readyAt)}></i></div><small ${tm('txt', cur.startAt, cur.readyAt)}></small>`;
+    else if (ready) line = '<small>Ready to collect!</small>';
+    return `<div class="bld ${ready ? 'has-ready' : ''}" data-act="bld" data-i="${i}">${ready ? `<span class="rb" data-act="bcollect" data-i="${i}">✓ ${ready}</span>` : ''}<span class="em">${esc(d.emoji)}</span><div class="bi"><b>${esc(d.name)}</b><div class="pips">${pips}</div>${line}</div></div>`;
+  }
+  function renderFarm() {
+    const s = S();
+    renderPlots();
+    const pens = s.animals.map(penHTML);
+    if (!pens.length) pens.push('<div class="empty-note">No animals yet. Visit the Shop 🏪 for chickens, cows and more!</div>');
+    patchChildren($('#pens'), pens);
+    setText($('#pen-info'), s.animals.length ? `${s.animals.filter(a => a.status === 'ready').length} ready · ${s.animals.length} animals` : '');
+    const bl = s.buildings.map(bldHTML);
+    if (!bl.length) bl.push('<div class="empty-note">No buildings yet. Build a mill or bakery in the Shop 🏪</div>');
+    patchChildren($('#blds'), bl);
+    setText($('#bld-info'), s.buildings.length ? s.buildings.length + ' built' : '');
+  }
+
+  // ---------- Orders ----------
+  function ordersList() { try { return (G.Economy && G.Economy.orders && G.Economy.orders()) || []; } catch (e) { return []; } }
+  function canFul(o) { try { if (G.Economy && G.Economy.canFulfill) return !!G.Economy.canFulfill(o.id); } catch (e) { } return G.hasItems(o.items); }
+  const isSlotCool = o => !Object.keys(o.items || {}).length || (o.cooldownUntil && o.cooldownUntil > Date.now());
+  function orderHTML(o) {
+    const now = Date.now();
+    if (isSlotCool(o)) {
+      return `<div class="order cool"><span class="truck">🚚</span><b>Next order in</b><small ${tm('txt', 0, o.cooldownUntil || now, ' data-done="Arriving..."')}></small></div>`;
+    }
+    const rg = (D().regions || {})[o.region] || {}, can = canFul(o), exp = !!o.expiresAt;
+    return `<div class="order ${exp ? 'express' : ''} ${can ? 'can' : ''}">${exp ? `<span class="o-exp">⚡ <span ${tm('txt', 0, o.expiresAt)}></span></span>` : ''}
+      <div class="o-head"><div class="o-av">${esc(o.customerEmoji || '🧑')}</div><div class="o-who"><b>${esc(o.customer || 'Customer')}</b><small>${esc(rg.emoji || '📍')} ${esc(rg.name || o.region || '')}</small></div></div>
+      <div class="o-items">${needChips(o.items)}</div>
+      <div class="o-rew"><span>🪙 ${fmt(o.coins)}</span><span>⭐ ${fmt(o.xp)}</span></div>
+      <div class="o-foot"><button class="btn btn-green sm ${can ? '' : 'off'}" data-act="odo" data-id="${esc(o.id)}" ${can ? '' : 'aria-disabled="true"'}>Deliver</button><button class="btn-ico" data-act="odel" data-id="${esc(o.id)}" aria-label="Discard order">🗑️</button></div></div>`;
+  }
+  function renderOrders() {
+    const list = ordersList();
+    const real = list.filter(o => !isSlotCool(o)), cool = list.filter(isSlotCool);
+    const h = real.concat(cool).map(orderHTML);
+    if (!h.length) h.push('<div class="empty-note">No orders right now. Trucks are on the way! 🚚</div>');
+    patchChildren($('#orders-grid'), h);
+    setText($('#orders-info'), `${real.filter(canFul).length}/${real.length} ready to deliver`);
+  }
+  function ordersSig() { const n = Date.now(); return ordersList().map(o => o.id + (isSlotCool(o) ? 'c' : 'o')).join(','); }
+
+  // ---------- Shop ----------
+  const TAGINFO = { irrigation: '💧 Protects vs drought & heat', windbreak: '🌲 Less wind & dust damage', frost_fans: '🌀 Frost protection', beehives: '🐝 Pollination boost', firebreak: '🚒 Wildfire protection', cold_storage: '🧊 Price-crash shield' };
+  function catalog() {
+    let c = null; try { c = G.Economy && G.Economy.shopCatalog && G.Economy.shopCatalog(); } catch (e) { }
+    if (c) return c;
+    const mk = cat => Object.keys(D()[cat] || {}).map(key => ({ key, def: D()[cat][key] })).sort((a, b) => (a.def.level || 1) - (b.def.level || 1));
+    return { animals: mk('animals'), buildings: mk('buildings'), expansions: mk('expansions'), plot: { cost: G.plotCost(), available: S().plots.length < S().maxPlots } };
+  }
+  function shopCard(e, kind) {
+    const s = S(), d = e.def || {}, lvl = d.level || 1, key = e.key;
+    let owned = false, count = 0, maxed = false, locked = s.level < lvl, need = '';
+    if (kind === 'animals') { count = s.animals.filter(a => a.type === key).length; maxed = count >= (d.max || 6); }
+    else if (kind === 'buildings') owned = s.buildings.some(b => b.type === key);
+    else { owned = G.hasExpansion(key); if (d.requires && !G.hasExpansion(d.requires)) { locked = locked || false; need = (dget('expansions', d.requires) || {}).name || d.requires; } }
+    const tags = [];
+    if (kind === 'animals') { tags.push(`<span class="tag">${esc(iEmoji(d.product))} ${esc(iName(d.product))} / ${fmtT(d.produceSec)}</span>`, `<span class="tag">Eats ${d.feedQty || 1}× ${esc(iEmoji(d.feed))}</span>`, `<span class="tag">${count}/${d.max || 6} owned</span>`); }
+    if (kind === 'buildings') { const outs = (d.recipes || []).slice(0, 6).map(r => esc(iEmoji(r.output))).join(' '); tags.push(`<span class="tag">${(d.recipes || []).length} recipes</span>`); if (outs) tags.push(`<span class="tag">${outs}</span>`); }
+    if (kind === 'upgrades') { if (d.barnCap) tags.push(`<span class="tag">🏚️ +${d.barnCap} barn space</span>`); if (d.maxPlots) tags.push(`<span class="tag">🟫 +${d.maxPlots} plot limit</span>`); if (d.tag && TAGINFO[d.tag]) tags.push(`<span class="tag">${esc(TAGINFO[d.tag])}</span>`); }
+    let act;
+    if (owned) act = '<span class="owned">✓ Owned</span>';
+    else if (maxed) act = '<span class="owned">Max</span>';
+    else if (s.level < lvl) act = `<span class="lockpill">🔒 Lv ${lvl}</span>`;
+    else if (need) act = `<span class="lockpill" style="font-size:11px">Needs ${esc(need)}</span>`;
+    else act = `<button class="btn btn-gold sm ${s.coins < d.cost ? 'poor' : ''}" data-act="buy" data-kind="${kind}" data-key="${esc(key)}">🪙 ${fmt(d.cost)}</button>`;
+    const lock = (s.level < lvl) || (!!need && !owned);
+    return `<div class="shop-card ${lock ? 'locked' : ''}"><div class="sc-e">${esc(d.emoji || '📦')}</div><div class="sc-m"><b>${esc(d.name || key)}</b><small>${esc(d.desc || '')}</small><div class="sc-tags">${tags.join('')}</div></div><div class="sc-act">${act}</div></div>`;
+  }
+  function renderShop() {
+    $$('#shop-seg button').forEach(b => b.classList.toggle('on', b.dataset.v === UI.shopTab));
+    const c = catalog(); let h = [];
+    if (UI.shopTab === 'animals') h = (c.animals || []).map(e => shopCard(e, 'animals'));
+    else if (UI.shopTab === 'buildings') h = (c.buildings || []).map(e => shopCard(e, 'buildings'));
+    else if (UI.shopTab === 'upgrades') h = (c.expansions || []).map(e => shopCard(e, 'upgrades'));
+    else {
+      const s = S(), cost = G.plotCost(), avail = s.plots.length < s.maxPlots;
+      h = [`<div class="shop-card"><div class="sc-e">🟫</div><div class="sc-m"><b>New field plot</b><small>More land means more crops. You own ${s.plots.length} of ${s.maxPlots} possible plots. Upgrades can raise the limit.</small><div class="sc-tags"><span class="tag">${s.plots.length}/${s.maxPlots} plots</span></div></div><div class="sc-act">${avail ? `<button class="btn btn-gold sm ${s.coins < cost ? 'poor' : ''}" data-act="buy" data-kind="land" data-key="plot">🪙 ${fmt(cost)}</button>` : '<span class="lockpill">Max land</span>'}</div></div>`];
+    }
+    if (!h.length) h = ['<div class="empty-note">Nothing here yet.</div>'];
+    patchChildren($('#shop-list'), h);
+    setText($('#shop-info'), '🪙 ' + fmt(S().coins));
+  }
+
+  // ---------- Barn ----------
+  function trendDir(key) {
+    let t; try { t = G.Economy && G.Economy.trend && G.Economy.trend(key); } catch (e) { }
+    let d = 0;
+    if (typeof t === 'string') d = /up|rise|\+|▲|↑/i.test(t) ? 1 : /down|fall|-|▼|↓/i.test(t) ? -1 : 0;
+    else if (typeof t === 'number') d = t >= .5 ? (t > 1.04 ? 1 : t < .96 ? -1 : 0) : (t > .03 ? 1 : t < -.03 ? -1 : 0);
+    if (!d && G.mods) { const m = G.mods.price(key); d = m > 1.04 ? 1 : m < .96 ? -1 : 0; }
+    return d;
+  }
+  function renderBarn() {
+    const s = S(), cnt = G.barnCount(), cap = s.barnCap, pct = clamp(cnt / cap * 100, 0, 100);
+    const f = $('#barn-fill'); if (f) { f.style.width = pct + '%'; f.className = pct >= 100 ? 'full' : pct >= 75 ? 'warn' : ''; }
+    setText($('#barn-cap-txt'), `${cnt}/${cap} stored`);
+    setText($('#barn-info'), pct >= 90 ? 'Almost full! Sell or upgrade' : '');
+    const items = Object.entries(s.barn).filter(([, q]) => q > 0).sort((a, b) => iName(a[0]).localeCompare(iName(b[0])));
+    const h = items.map(([k, q]) => {
+      const d = trendDir(k), p = G.sellPrice(k);
+      return `<div class="item"><div class="it-top"><div class="it-e">${esc(iEmoji(k))}<span class="it-q">${q}</span></div><div class="it-m"><b>${esc(iName(k))}</b><div class="it-p">🪙 ${p} <span class="${d > 0 ? 'tr-up' : d < 0 ? 'tr-down' : 'tr-flat'}">${d > 0 ? '▲' : d < 0 ? '▼' : '▬'}</span></div></div></div>
+      <div class="it-btns"><button class="btn btn-gold sm" data-act="sell" data-key="${esc(k)}" data-n="1">Sell 1</button><button class="btn btn-green sm" data-act="sell" data-key="${esc(k)}" data-n="all">All +${fmt(p * q)}</button></div></div>`;
+    });
+    if (!h.length) h.push('<div class="empty-note">The barn is empty. Harvest some crops! 🌾</div>');
+    patchChildren($('#barn-grid'), h);
+  }
+
+  // ---------- Almanac ----------
+  function ago(t) {
+    const m = Math.floor((Date.now() - t) / 60000);
+    return m < 1 ? 'just now' : m < 60 ? m + 'm ago' : Math.floor(m / 60) + 'h ago';
+  }
+  function fillProfile(force) {
+    const s = S();
+    setText($('#pf-av'), avatar());
+    $$('#pf-avatars button').forEach(b => b.classList.toggle('on', b.dataset.v === avatar()));
+    const n = $('#pf-name'), f = $('#pf-farm');
+    if (n && (force || document.activeElement !== n)) n.value = s.playerName || '';
+    if (f && (force || document.activeElement !== f)) f.value = s.farmName || '';
+  }
+  function renderAlmanac() {
+    const s = S(), cal = G.calendar(), st = s.stats || {};
+    setText($('#alm-info'), `Year ${cal.year} · Day ${cal.day}`);
+    const tile = (e, v, l) => `<div class="stat"><i>${e}</i><b>${fmt(v)}</b><small>${l}</small></div>`;
+    setHTML($('#alm-stats'), tile('🌾', st.harvested, 'Harvested') + tile('📋', st.ordersDone, 'Orders done') + tile('🪙', st.coinsEarned, 'Coins earned') + tile('⚡', st.eventsSeen, 'Events seen') + tile('⭐', s.level, 'Level') + tile('🟫', s.plots.length, 'Plots'));
+    const log = (s.eventLog || []).slice().reverse();
+    setHTML($('#alm-log'), log.length ? log.map(e => {
+      const k = e.kind === 'good' ? 'good' : e.kind === 'bad' ? 'bad' : 'neutral';
+      return `<div class="log ${k}"><i>${esc(e.emoji || '❗')}</i><div><b>${esc(e.name || e.key)}</b><small>${esc(e.text || '')}</small></div><time>${ago(e.at)}</time></div>`;
+    }).join('') : '<div class="empty-note">No events yet. The Palouse is quiet... for now. 🌾</div>');
+    setHTML($('#alm-regions'), Object.values(D().regions || {}).map(r => `<div class="region"><i>${esc(r.emoji)}</i><div><b>${esc(r.name)}</b><small>${esc(r.blurb)}</small></div></div>`).join(''));
+    fillProfile(false);
+  }
+
+  // ---------- view switching / render ----------
+  function renderView() {
+    ({ farm: renderFarm, orders: renderOrders, shop: renderShop, barn: renderBarn, almanac: renderAlmanac }[UI.tab] || renderFarm)();
+  }
+  function showTab(t) {
+    UI.tab = t;
+    const app = $('#app'); app.dataset.tab = t;
+    $$('.view').forEach(v => { v.hidden = v.dataset.view !== t; });
+    $$('#tabbar .tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+    if (t === 'almanac') fillProfile(true);
+    renderAll(); scrollTo(0, 0);
+  }
+  function renderBadges() {
+    const n = ordersList().filter(o => !isSlotCool(o) && canFul(o)).length;
+    const b = $('#badge-orders'); if (b) { b.hidden = !n; setText(b, String(n)); }
+    const bb = $('#badge-barn'); if (bb) bb.hidden = !(G.barnCount() / S().barnCap >= .9);
+  }
+  function renderFab() {
+    const n = S().plots.filter(p => p.status === 'ready').length, f = $('#fab-harvest');
+    if (!f) return;
+    f.hidden = !(UI.tab === 'farm' && n >= 2 && !UI.sheet);
+    setText($('#fab-n'), '(' + n + ')');
+  }
+  function renderAll() {
+    renderHUD(); renderStrip(); renderBadges(); renderView(); renderSheet(); renderFab(); updateFX(); updateTimers();
+  }
+  function queueRender() {
+    if (UI.pending) return; UI.pending = true;
+    requestAnimationFrame(() => { UI.pending = false; try { renderAll(); } catch (e) { console.error('[ui render]', e); } });
+  }
+
+  // ---------- timers ----------
+  function updateTimers(now) {
+    now = now || Date.now();
+    $$('[data-tm]').forEach(el => {
+      const t = el.dataset.tm, end = +el.dataset.end, start = +el.dataset.start || 0;
+      if (t === 'bar') {
+        const w = clamp(end > start ? (now - start) / (end - start) * 100 : 100, 0, 100).toFixed(1) + '%';
+        if (el._w !== w) { el.style.width = w; el._w = w; }
+      } else if (t === 'txt') {
+        const left = (end - now) / 1000; let s;
+        if (start && now < start) s = 'Queued'; else s = left <= 0 ? (el.dataset.done || 'Done') : fmtT(left);
+        s = (el.dataset.pre || '') + s;
+        if (el.textContent !== s) el.textContent = s;
+      } else if (t === 'crop') {
+        const prog = clamp((now - start) / Math.max(1, end - start), 0, 1), st = prog < .3 ? 0 : 1;
+        const em = st ? el.dataset.emoji : '🌱';
+        if (el.textContent !== em) el.textContent = em;
+        const sc = (st ? .6 + .5 * ((prog - .3) / .7) : .75 + prog * .5).toFixed(2);
+        if (el._s !== sc) { el.style.transform = `scale(${sc})`; el._s = sc; }
+      }
+    });
+  }
+  function tickChecks(now) {
+    const bs = S().buildings.map(b => b.queue.filter(j => j.readyAt <= now).length).join('');
+    let changed = false;
+    if (bs !== UI.sig.b) { UI.sig.b = bs; changed = true; }
+    if (UI.tab === 'orders' || true) { const os = ordersSig(); if (os !== UI.sig.o) { UI.sig.o = os; changed = true; } }
+    const ev = activeEvents().filter(r => !r.pending && r.endAt > now).map(r => r.id).join();
+    if (ev !== UI.sig.e) { UI.sig.e = ev; changed = true; }
+    if (UI.tfx && now > UI.tfx.until) { UI.tfx = null; changed = true; }
+    if (changed) queueRender();
+  }
+
+  // ---------- sheets ----------
+  function openSheet(spec) {
+    UI.sheet = spec;
+    const w = $('#sheet-wrap'); w.hidden = false;
+    const b = $('#sheet-body'); b._h = null;
+    void w.offsetWidth; w.classList.add('open');
+    renderSheet(); renderFab();
+  }
+  function closeSheet() {
+    if (!UI.sheet) return;
+    UI.sheet = null;
+    const w = $('#sheet-wrap'); w.classList.remove('open');
+    setTimeout(() => { if (!UI.sheet) w.hidden = true; }, 240);
+    renderFab();
+  }
+  function renderSheet() {
+    const sp = UI.sheet; if (!sp) return;
+    let html = '';
+    try { html = sp.kind === 'seed' ? seedSheet(sp) : sp.kind === 'bld' ? bldSheet(sp) : eventSheet(sp); } catch (e) { console.error(e); }
+    if (html == null) { closeSheet(); return; }
+    const body = $('#sheet-body'); if (body._h === html) return;
+    const hs = $('.hscroll', body), sl = hs ? hs.scrollLeft : 0, st = body.scrollTop;
+    body.innerHTML = html; body._h = html;
+    const hs2 = $('.hscroll', body); if (hs2) hs2.scrollLeft = sl; body.scrollTop = st;
+    updateTimers();
+  }
+  const head = (title, sub) => `<div class="sh-head"><div><h3>${title}</h3>${sub ? `<small>${sub}</small>` : ''}</div><button class="sh-x" data-act="sheet-close" aria-label="Close">✕</button></div>`;
+  function seedSheet(sp) {
+    const s = S(), season = G.calendar().season, last = s.flags['ui.lastCrop'];
+    const crops = Object.entries(D().crops || {}).sort((a, b) => (a[1].level || 1) - (b[1].level || 1) || a[1].seedCost - b[1].seedCost);
+    const empties = s.plots.filter(p => p.status === 'empty').length;
+    if (sp.plot != null && s.plots[sp.plot] && s.plots[sp.plot].status !== 'empty' && !UI.seedAll && sp._opened) return null;
+    sp._opened = true;
+    const si = (G.SEASON_INFO || {})[season] || { name: season, emoji: '' };
+    const cards = crops.map(([k, c]) => {
+      const locked = s.level < (c.level || 1), inS = (c.seasons || []).includes(season);
+      const badge = locked ? `<span class="badge2 lock">🔒 Lv ${c.level}</span>` : inS ? '<span class="badge2 in">✓ In season</span>' : '<span class="badge2 off">Off-season ½ yield</span>';
+      return `<div class="seed ${locked ? 'locked' : ''} ${last === k ? 'last' : ''} ${s.coins < c.seedCost && !locked ? 'poor' : ''}" data-act="seed" data-key="${esc(k)}"><div class="seed-e">${esc(c.emoji)}</div><div class="seed-n">${esc(c.name)}</div><div class="seed-r"><span class="cost">🪙 ${c.seedCost} seed</span><span>⏱ ${fmtT(c.growSec)}</span><span>🧺 yield ×${c.yield}</span><span>💰 sells ${c.sellPrice}</span></div>${badge}</div>`;
+    }).join('');
+    const lc = dget('crops', last), lcOk = lc && s.level >= (lc.level || 1);
+    const cost = lcOk ? lc.seedCost * empties : 0;
+    return head('🌱 Choose a crop', `${si.emoji} ${esc(si.name)} · ${empties} empty plot${empties === 1 ? '' : 's'}`) +
+      `<div class="hscroll">${cards}</div><div class="sheet-foot">
+      <button class="toggle ${UI.seedAll ? 'on' : ''}" data-act="seedall">${UI.seedAll ? '☑' : '☐'} Tap a seed to fill all ${empties} empty plots</button>
+      <button class="btn btn-gold ${lcOk && empties ? '' : 'off'}" data-act="plantall" ${lcOk && empties ? '' : 'aria-disabled="true"'}>🚜 Plant all empty${lcOk ? ` with ${esc(lc.emoji)} ${esc(lc.name)} · 🪙 ${fmt(cost)}` : ''}</button></div>`;
+  }
+  function bldSheet(sp) {
+    const s = S(), b = s.buildings[sp.i]; if (!b) return null;
+    const d = dget('buildings', b.type) || { name: b.type, emoji: '🏭', recipes: [] }, now = Date.now();
+    const ready = b.queue.filter(j => j.readyAt <= now).length;
+    let q = '';
+    for (let k = 0; k < b.maxQueue; k++) {
+      const j = b.queue[k];
+      if (!j) { q += `<div class="qrow" style="opacity:.55"><span class="qe">➕</span><div class="qm"><b>Empty slot</b></div></div>`; continue; }
+      const r = G.findRecipe ? G.findRecipe(b.type, j.recipeId) : null, done = j.readyAt <= now;
+      q += `<div class="qrow ${done ? 'done' : ''}"><span class="qe">${esc(r ? iEmoji(r.output) : '❔')}</span><div class="qm"><b>${esc(r ? r.name : j.recipeId)}</b>${done ? '<small>✓ Ready!</small>' : `<div class="mini" style="width:100%"><i ${tm('bar', j.startAt, j.readyAt)}></i></div><small ${tm('txt', j.startAt, j.readyAt)}></small>`}</div></div>`;
+    }
+    const full = b.queue.length >= b.maxQueue;
+    const recs = (d.recipes || []).map(r => {
+      const locked = s.level < (r.level || 1), can = !locked && !full && G.hasItems(r.inputs);
+      return `<div class="rec ${locked ? 'locked' : ''}"><span class="re">${esc(iEmoji(r.output))}</span><div class="rm"><b>${esc(r.name)} ×${r.qty || 1}</b><div class="needs">${needChips(r.inputs)}</div><small>⏱ ${fmtT(r.sec)} · ⭐ ${r.xp || 0} xp</small></div>${locked ? `<span class="lockpill">🔒 Lv ${r.level}</span>` : `<button class="btn btn-green sm ${can ? '' : 'off'}" data-act="recipe" data-i="${sp.i}" data-id="${esc(r.id)}" ${can ? '' : 'aria-disabled="true"'}>Start</button>`}</div>`;
+    }).join('');
+    return head(`${esc(d.emoji)} ${esc(d.name)}`, esc(d.desc || '')) + `<div class="sub">Production queue (${b.queue.length}/${b.maxQueue})</div>${q}
+      ${ready ? `<button class="btn btn-green" style="width:100%;margin-bottom:6px" data-act="bcollect" data-i="${sp.i}">📦 Collect ${ready} finished</button>` : ''}
+      <div class="sub">Recipes</div>${recs || '<div class="empty-note">No recipes.</div>'}`;
+  }
+  function eventSheet(sp) {
+    const rec = activeEvents().find(r => r.id === sp.id); if (!rec) return null;
+    const def = evDef(rec.key) || {}, kind = def.kind || 'neutral';
+    const lg = (S().eventLog || []).slice().reverse().find(e => e.key === rec.key && e.at === rec.startAt);
+    let text = lg ? lg.text : (typeof def.text === 'string' ? def.text : def.desc || '');
+    let mods = []; try { const m = G.Events.describeMods(rec); mods = Array.isArray(m) ? m : m ? [String(m)] : []; } catch (e) { }
+    return head('Event details') + `<div class="det-banner ${esc(kind)}"><div class="big">${esc(def.emoji || '❗')}</div><h3>${esc(def.name || rec.key)}</h3><small ${tm('txt', 0, rec.endAt, ' data-pre="⏳ "')}></small></div>
+      <p style="font-size:14px;line-height:1.4;margin:12px 2px">${esc(text)}</p>
+      ${mods.length ? `<div class="sub">Effects</div><ul class="modlist">${mods.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}`;
+  }
+
+  // ---------- modals ----------
+  function pushModal(spec) { UI.modals.push(spec); if (!UI.cur) nextModal(); }
+  function nextModal() {
+    const root = $('#modal-root'), spec = UI.modals.shift();
+    UI.cur = spec || null;
+    if (!spec) { root.hidden = true; root.innerHTML = ''; return; }
+    root.hidden = false;
+    root.innerHTML = `<div class="modal-bg"><div class="mwrap">${spec.html}</div></div>`;
+    try { spec.onShow && spec.onShow(root); } catch (e) { console.error(e); }
+    updateTimers();
+  }
+  function dismissEventModal(id) {
+    UI.modals = UI.modals.filter(m => m.eventId !== id);
+    if (UI.cur && UI.cur.eventId === id) nextModal();
+  }
+  function modsOf(rec) { try { const m = G.Events.describeMods(rec); return Array.isArray(m) ? m : m ? [String(m)] : []; } catch (e) { return []; } }
+  function eventModal(p) {
+    const def = p.def || {}, rec = p.event || {}, kind = def.kind === 'bad' ? 'bad' : def.kind === 'good' ? 'good' : 'neutral';
+    const choices = p.choices && p.choices.length ? p.choices : null;
+    const text = p.text || (typeof def.text === 'string' ? def.text : '') || def.desc || '';
+    const mods = rec.pending ? [] : modsOf(rec);
+    const kl = kind === 'bad' ? 'Trouble on the Palouse' : kind === 'good' ? 'Lucky break!' : 'News from the farm';
+    let btns;
+    if (choices) {
+      btns = choices.map((c, i) => {
+        const cost = c.cost || 0, aff = S().coins >= cost;
+        return `<button class="choice ${aff ? '' : 'poor'}" data-act="m-choice" data-i="${i}"><b>${esc(c.emoji ? c.emoji + ' ' : '')}${esc(c.label || c.text || c.name || 'Option ' + (i + 1))}</b>${c.desc ? `<small>${esc(c.desc)}</small>` : ''}<span class="cost">${cost ? '🪙 ' + fmt(cost) : 'Free'}</span></button>`;
+      }).join('');
+    } else btns = `<button class="btn ok-btn" data-act="m-close">OK</button>`;
+    return {
+      eventId: rec.id, hasChoices: !!choices,
+      html: `<div class="mcard ev ${kind}"><span class="ev-kind">${kl}</span><div class="ev-emoji">${esc(def.emoji || '❗')}</div><h2>${esc(def.name || def.key || 'Event')}</h2><p>${esc(text)}</p>
+        ${mods.length ? `<ul class="ev-mods">${mods.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
+        ${choices && rec.endAt ? `<div class="ev-timer" ${tm('txt', 0, rec.endAt, ' data-pre="⏳ Decide in "')}></div>` : ''}${btns}</div>`,
+      onChoice(i) {
+        let ok = true;
+        try { ok = G.Events && G.Events.choose ? G.Events.choose(rec.id, i) : true; } catch (e) { console.error(e); ok = false; }
+        if (ok === false) { G.toast((choices[i] && choices[i].cost && S().coins < choices[i].cost) ? 'Not enough coins for that option' : "Can't do that right now", 'bad'); return; }
+        dismissEventModal(rec.id);
+      },
+      onShow() { if (kind === 'bad') { const a = $('#app'); a.classList.remove('shake'); void a.offsetWidth; a.classList.add('shake'); setTimeout(() => a.classList.remove('shake'), 600); } }
+    };
+  }
+  function unlocksFor(level) {
+    const out = [];
+    [['crops', 'crop'], ['animals', 'animal'], ['buildings', 'building'], ['expansions', 'upgrade']].forEach(([cat, kind]) => {
+      Object.values(D()[cat] || {}).forEach(d => { if ((d.level || 1) === level) out.push((d.emoji || '') + ' ' + d.name); });
+    });
+    Object.values(D().buildings || {}).forEach(b => (b.recipes || []).forEach(r => { if ((r.level || 1) === level && level > 1) out.push(iEmoji(r.output) + ' ' + r.name); }));
+    return out;
+  }
+  function levelModal(level) {
+    const un = unlocksFor(level);
+    return {
+      html: `<div class="mcard lvl-card"><div class="lvl-big">🌟</div><div class="ev-kind" style="background:rgba(120,70,0,.18)">Level up!</div><div class="num">Level ${level}</div><h2 style="font-size:20px">Nice work, ${esc(pname())}!</h2>
+        ${un.length ? `<p style="margin-bottom:4px">New unlocks</p><div class="unlocks">${un.map(u => `<span>${esc(u)}</span>`).join('')}</div>` : '<p>Keep farming to unlock more!</p>'}
+        <p style="font-size:12px;color:var(--ink2);margin:6px 0 0">Level-up bonus coins added!</p><button class="btn btn-gold" data-act="m-close">Awesome!</button></div>`,
+      onShow: confetti
+    };
+  }
+  function welcomeModal() {
+    const named = !!S().playerName;
+    return {
+      html: `<div class="mcard"><div class="wel-av">${esc(avatar())}</div><h2>Welcome to Kellyville!</h2><p style="margin-bottom:6px">Farm life in Eastern Washington, from golden Palouse wheat to Wenatchee apples.</p>
+        <label class="name-lbl" for="name-in">What's your name, farmer?</label><input id="name-in" class="name-in" maxlength="20" autocomplete="off" autocapitalize="words" placeholder="Your name" value="${esc(S().playerName || '')}">
+        <ul class="tips"><li><i>🌱</i><span>Tap an empty plot to plant. Crops grow in real time, and in-season crops give full yield.</span></li><li><i>📋</i><span>Fill truck orders for coins and XP, and sell extras from the Barn.</span></li><li><i>⛈️</i><span>Dust, frost, fire and lucky breaks can strike. Buy upgrades in the Shop to protect your farm.</span></li></ul>
+        <button class="btn btn-green ${named ? '' : 'off'}" id="wel-go" data-act="welcome-go" ${named ? '' : 'aria-disabled="true"'}>🚜 Start farming</button></div>`,
+      onShow(root) {
+        const inp = $('#name-in', root), go = $('#wel-go', root); if (!inp) return;
+        const sync = () => { const ok = inp.value.trim().length > 0; go.classList.toggle('off', !ok); if (ok) go.removeAttribute('aria-disabled'); else go.setAttribute('aria-disabled', 'true'); };
+        inp.addEventListener('input', sync);
+        inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); welcomeGo(); } });
+        setTimeout(() => { try { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) { } }, 350);
+      }
+    };
+  }
+  function welcomeGo() {
+    const inp = $('#name-in'); if (!inp) return;
+    if (!G.setPlayerName || !G.setPlayerName(inp.value)) { G.toast('Please enter your name', 'bad'); return; }
+    S().flags['ui.welcomed'] = true;
+    inp.blur();
+    nextModal(); G.toast(`Welcome to Kellyville, ${pname()}!`, 'good'); G.save && G.save();
+  }
+  function confirmReset() {
+    pushModal({
+      html: `<div class="mcard"><div class="wel-av">⚠️</div><h2>Reset farm?</h2><p>All progress, coins and animals will be erased. This cannot be undone.</p><button class="btn btn-red" data-act="m-yes">Yes, reset everything</button><button class="btn btn-gray" data-act="m-close">Keep farming</button></div>`,
+      onYes() { nextModal(); try { G.reset(); } catch (e) { console.error(e); } }
+    });
+  }
+
+  // ---------- actions ----------
+  function plantMany(key) {
+    const c = dget('crops', key); if (!c) return;
+    S().flags['ui.lastCrop'] = key; let n = 0;
+    S().plots.forEach((p, i) => { if (p.status === 'empty' && G.plant(i, key)) n++; });
+    if (n) G.toast(`Planted ${n}× ${c.name}`, 'good');
+    closeSheet();
+  }
+  const ACT = {
+    tab(el) { showTab(el.dataset.tab); },
+    plot(el) {
+      const i = +el.dataset.i, p = S().plots[i]; if (!p) return;
+      if (p.status === 'empty') openSheet({ kind: 'seed', plot: i });
+      else if (p.status === 'ready') G.harvest(i);
+      else if (p.status === 'withered') { G.clearWithered(i); G.toast('Cleared the withered crop', 'info'); }
+      else { const c = dget('crops', p.crop) || {}; G.toast(`${c.emoji || '🌱'} ${c.name || 'Crop'}: ${fmtT((p.readyAt - Date.now()) / 1000)} left`, 'info'); }
+    },
+    buyplot() { if (G.buyPlot()) G.toast('New plot of land!', 'good'); },
+    harvestall() {
+      const idx = []; S().plots.forEach((p, i) => { if (p.status === 'ready') idx.push(i); });
+      UI.flySeq = 0; let n = 0;
+      for (const i of idx) { if (!G.harvest(i)) break; n++; }
+      if (n) setTimeout(() => { UI.flySeq = 0; }, 800);
+    },
+    seed(el) {
+      const key = el.dataset.key, c = dget('crops', key); if (!c) return;
+      if (S().level < (c.level || 1)) { G.toast(`${c.name} unlocks at level ${c.level}`, 'bad'); return; }
+      if (UI.seedAll) { plantMany(key); return; }
+      const i = UI.sheet && UI.sheet.plot;
+      if (G.plant(i, key)) { S().flags['ui.lastCrop'] = key; closeSheet(); }
+      else if (S().plots[i] && S().plots[i].status !== 'empty') closeSheet();
+    },
+    seedall() { UI.seedAll = !UI.seedAll; renderSheet(); },
+    plantall(el) { const k = S().flags['ui.lastCrop']; if (!k || el.getAttribute('aria-disabled')) return; plantMany(k); },
+    'sheet-close'() { closeSheet(); },
+    'sheet-bg'(el, e) { if (e.target === el) closeSheet(); },
+    feed(el) { G.feedAnimal(+el.dataset.i); },
+    collect(el) { G.collectAnimal(+el.dataset.i); },
+    'pen-info'(el) { const a = S().animals[+el.dataset.i]; if (a) { const d = dget('animals', a.type) || {}; G.toast(`${d.emoji || ''} ${d.name || 'Animal'}: ${fmtT((a.readyAt - Date.now()) / 1000)} until ${iName(d.product)}`, 'info'); } },
+    bld(el) { openSheet({ kind: 'bld', i: +el.dataset.i }); },
+    bcollect(el, e) { if (e && e.stopPropagation) e.stopPropagation(); G.collectBuilding(+el.dataset.i); },
+    recipe(el) { if (el.getAttribute('aria-disabled')) { const b = S().buildings[+el.dataset.i]; G.toast(b && b.queue.length >= b.maxQueue ? 'Queue full' : 'Missing ingredients', 'bad'); return; } G.startRecipe(+el.dataset.i, el.dataset.id); },
+    odo(el) {
+      if (el.getAttribute('aria-disabled')) { G.toast('You are missing some items', 'bad'); return; }
+      try { if (G.Economy && G.Economy.fulfill) G.Economy.fulfill(el.dataset.id); } catch (e) { console.error(e); }
+    },
+    odel(el) { try { if (G.Economy && G.Economy.discard) { G.Economy.discard(el.dataset.id); G.toast('Order discarded', 'info'); } } catch (e) { console.error(e); } },
+    shoptab(el) { UI.shopTab = el.dataset.v; renderShop(); },
+    buy(el) {
+      const k = el.dataset.key, kind = el.dataset.kind; let ok = false, nm = '';
+      if (kind === 'animals') { ok = G.buyAnimal(k); nm = (dget('animals', k) || {}).name; }
+      else if (kind === 'buildings') { ok = G.buyBuilding(k); nm = (dget('buildings', k) || {}).name; }
+      else if (kind === 'upgrades') { ok = G.buyExpansion(k); nm = (dget('expansions', k) || {}).name; }
+      else { ok = G.buyPlot(); nm = 'a new plot'; }
+      if (ok) G.toast(`Bought ${nm}!`, 'good');
+    },
+    sell(el) {
+      const k = el.dataset.key, n = el.dataset.n === 'all' ? G.qty(k) : +el.dataset.n;
+      G.sell(k, n);
+    },
+    echip(el) { openSheet({ kind: 'event', id: el.dataset.id }); },
+    avatar(el) { S().flags['ui.avatar'] = el.dataset.v; fillProfile(false); queueRender(); G.save && G.save(); },
+    saveprofile() {
+      const n = $('#pf-name').value, f = $('#pf-farm').value;
+      if (!G.setPlayerName(n)) { G.toast('Please enter a name', 'bad'); return; }
+      if (f.trim()) G.setFarmName(f);
+      G.toast('Profile saved!', 'good'); fillProfile(true);
+    },
+    reset() { confirmReset(); },
+    'm-close'() { nextModal(); },
+    'm-choice'(el) { if (UI.cur && UI.cur.onChoice) UI.cur.onChoice(+el.dataset.i); },
+    'm-yes'() { if (UI.cur && UI.cur.onYes) UI.cur.onYes(); },
+    'welcome-go'(el) { if (el.getAttribute('aria-disabled')) { G.toast('Type your name first', 'info'); return; } welcomeGo(); }
+  };
+  function dispatch(el, e) {
+    const a = el.dataset.act, fn = ACT[a]; if (!fn) return;
+    UI.tapRect = el.getBoundingClientRect(); UI.tapAt = Date.now();
+    try { fn(el, e); } catch (err) { console.error('[ui action]', a, err); }
+  }
+  // pointer-based tap detection (scrolling cancels the pointer, so scrolls never trigger taps)
+  let down = null;
+  const sigOf = el => el.dataset.act + JSON.stringify(el.dataset);
+  function bindInput() {
+    document.addEventListener('pointerdown', e => {
+      const el = e.target.closest && e.target.closest('[data-act]');
+      down = el ? { sig: sigOf(el), x: e.clientX, y: e.clientY } : null;
+    }, { passive: true });
+    document.addEventListener('pointerup', e => {
+      const d = down; down = null; if (!d) return;
+      const el = e.target.closest && e.target.closest('[data-act]');
+      if (!el || sigOf(el) !== d.sig || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 14) return;
+      dispatch(el, e);
+      UI.lastPtr = Date.now();
+    });
+    document.addEventListener('pointercancel', () => { down = null; });
+    // keyboard-initiated clicks only (detail 0); pointer taps are handled above
+    document.addEventListener('click', e => {
+      if (e.detail !== 0) return;
+      const el = e.target.closest && e.target.closest('[data-act]'); if (el) dispatch(el, e);
+    });
+    document.addEventListener('dblclick', e => { if (e.target.closest && e.target.closest('#app')) e.preventDefault(); });
+    document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.plot,.pen,.bld,.tab')) e.preventDefault(); });
+  }
+
+  // ---------- bus wiring ----------
+  function wire() {
+    const on = (n, f) => G.bus.on(n, p => { try { f(p); } catch (e) { console.error('[ui]', n, e); } });
+    on('change', queueRender);
+    on('tick', p => { const now = (p && p.now) || Date.now(); updateTimers(now); updateSky(p && p.cal); updateSeasonChip(p && p.cal); tickChecks(now); });
+    on('state:reset', () => {
+      closeSheet(); UI.modals = []; UI.cur = null; $('#modal-root').hidden = true; UI.sig = {};
+      showTab('farm'); setTimeout(() => pushModal(welcomeModal()), 200);
+    });
+    on('harvested', p => {
+      const el = $(`[data-plot="${p.plotIdx}"]`), r = el ? el.getBoundingClientRect() : tapOrigin();
+      const k = ++UI.flySeq;
+      fly(`+${p.n} ${esc(iEmoji(p.cropKey))}`, r, $('#hud-barn-pill'), { delay: (k - 1) * 90 });
+    });
+    on('collected', p => { fly(`+${p.n} ${esc(iEmoji(p.key))}`, tapOrigin(), $('#hud-barn-pill')); });
+    on('coins', p => {
+      const pill = $('#hud-coins-pill'); if (!p) return;
+      if (p.delta > 0) fly(`+${fmt(p.delta)} 🪙`, tapOrigin(), pill, { cls: 'coin', dur: 1000 }); else if (pill) bump(pill);
+    });
+    on('order:done', p => {
+      const o = (p && (p.order || p)) || {};
+      G.toast('Order delivered!' + (o.coins ? ` +${fmt(o.coins)} 🪙` : ''), 'good');
+    });
+    on('levelup', p => pushModal(levelModal((p && p.level) || S().level)));
+    on('event:start', p => {
+      if (!p || !p.def) return;
+      pushModal(eventModal(p));
+      UI.tfx = { list: fxFor(p.def.key || '', p.def), until: Date.now() + 9000 };
+      updateFX(); queueRender();
+    });
+    on('event:end', p => { if (p && p.event) dismissEventModal(p.event.id); updateFX(); queueRender(); });
+    on('event:choice', p => { if (p && p.event) { dismissEventModal(p.event.id); } queueRender(); });
+    on('player:rename', queueRender);
+  }
+
+  // ---------- init ----------
+  G.bus.on('init', function () {
+    try {
+      bindInput(); wire(); buildFxParticles();
+      $$('.view').forEach(v => { v.hidden = v.dataset.view !== 'farm'; });
+      updateSky(); renderAll();
+      const s = S();
+      if (!s.flags['ui.welcomed'] || !s.playerName) pushModal(welcomeModal());
+      else setTimeout(() => G.toast(`Welcome back, ${pname()}!`, 'good'), 400);
+      addEventListener('resize', () => { renderHUD(); updateSky(); });
+    } catch (e) { console.error('[ui init]', e); }
+  });
+})();
+
+</script>
+</body>
+</html>
