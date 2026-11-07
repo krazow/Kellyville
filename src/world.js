@@ -1218,7 +1218,7 @@
     return [cal.season, s.plots.length, s.maxPlots > s.plots.length ? G.plotCost() : 0, s.buildings.map(b => b.type).join(','), penTypes().map(t => s.animals.some(a => a.type === t) ? 1 : 0).join(''),
       (s.ownedExpansions || []).filter(k => k === 'center_pivot' || k === 'windbreak_trees').join(','), standBuilt() ? 1 : 0, restStage(), restStage() === 'open' ? tableCount() : 0, hasTractor() ? 1 : 0, Math.round(V.dpr * 10),
       antiquesOn() ? 'N' + safe(() => G.Antiques.level(), 1) + JSON.stringify(safe(() => G.Antiques.upgrades(), {})) + safe(() => G.Antiques.display().map(d => d && d.key).join(','), '') : '',
-      apiaryOn() ? 'A' + apiaryHives().map(h => (h.supers || 0) + (h.status === 'away' ? 'a' : h.status === 'empty' ? 'e' : '')).join('') + JSON.stringify(safe(() => G.Apiary.upgrades(), {})) : ''].join('|');
+      apiaryOn() ? 'A' + apiaryHives().map(h => (h.supers || 0) + ({ away: 'a', empty: 'e', sick: 's', dormant: 'd' }[h.status] || '')).join('') + JSON.stringify(safe(() => G.Apiary.upgrades(), {})) : ''].join('|');
   }
   function checkLayout() {
     if (!S()) return;
