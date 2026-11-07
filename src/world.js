@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   const G = window.G; if (!G) return;
-  const T = 40, W = 40, H = 30, TAU = Math.PI * 2;
+  const T = 40, W = 40, H = 35, TAU = Math.PI * 2;   // rows 29..33: roadside strip across County Rd 9 (antique store)
   // ---- 3/4 top-down camera. The ground plane is foreshortened vertically by F; anything with height rises straight up
   // the screen by HZ per world px. Draw code works in "ground space" (x, y in world px; the canvas transform squashes y by F).
   const F = 0.75, HZ = 0.8;
@@ -35,9 +35,17 @@
     pasture: { x: 30, y: 12, w: 8, h: 10, pt: [29.4, 17], emoji: '🐄', label: 'Pasture' },
     fields: { x: 2, y: 9, w: 12, h: 12, pt: [7, 8.6], emoji: '🌾', label: 'Fields', nosolid: true },
     pens: { x: 15, y: 9, w: 12, h: 9, pt: [21, 13.5], emoji: '🐔', label: 'Animal pens', nosolid: true },
-    buildings: { x: 15, y: 19, w: 12, h: 5, pt: [20.5, 21], emoji: '🏭', label: 'Buildings', nosolid: true }
+    buildings: { x: 15, y: 19, w: 12, h: 5, pt: [20.5, 21], emoji: '🏭', label: 'Buildings', nosolid: true },
+    apiary: { x: 27.5, y: 2.4, w: 2.5, h: 4.6, pt: [28.75, 7.5], emoji: '🐝', label: 'Apiary', nosolid: true },
+    // across County Rd 9: the storefront faces the camera (south), so the walk-up point is on the front walk below it
+    antiques: { x: 16, y: 29, w: 8, h: 3, pt: [20, 32.55], emoji: '🏺', label: 'Antique store' }
   };
-  const ZONE_ORDER = ['house', 'fields', 'pens', 'buildings', 'barn', 'orders', 'shop', 'shed', 'pasture', 'stand', 'restaurant'];
+  // hive positions inside the apiary (tile units, base centre of each hive), up to 8: two columns x four rows, beside the pond
+  const APIARY_SLOTS = Array.from({ length: 8 }, (_, i) => [28.15 + (i % 2) * 1.2, 3.75 + Math.floor(i / 2) * 0.95]);
+  const antiquesOn = () => !!safe(() => G.Antiques && G.Antiques.isBuilt && G.Antiques.isBuilt(), false);
+  const apiaryOn = () => !!safe(() => G.Apiary && G.Apiary.isBuilt && G.Apiary.isBuilt(), false);
+  const apiaryHives = () => safe(() => (G.Apiary && G.Apiary.hives) ? G.Apiary.hives() : [], []) || [];
+  const ZONE_ORDER = ['house', 'fields', 'pens', 'buildings', 'apiary', 'barn', 'orders', 'shop', 'shed', 'pasture', 'stand', 'restaurant', 'antiques'];
   const PEN_POS = [[15, 9, 'b'], [22, 9, 'b'], [15, 14, 't'], [22, 14, 't']]; // x, y, gate side (6x4 footprint)
   const PASTURE_GATE = { x: 30, y: 16, h: 2 };
   const POND = { cx: 24.5, cy: 4.4, rx: 2.9, ry: 1.8 };
@@ -140,13 +148,14 @@
     const s = S(), solid = new Uint8Array(W * H);
     const fill = (x0, y0, w, h, v) => { for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) if (x >= 0 && y >= 0 && x < W && y < H) solid[y * W + x] = v == null ? 1 : v; };
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const ring = x <= 1 || x >= 38 || y <= 1 || y >= 29;
+      const ring = x <= 1 || x >= 38 || y <= 1 || y >= H - 1;
       if (ring && !(y >= ROAD0 && y <= ROAD1)) solid[y * W + x] = 1;
     }
     ['barn', 'shed', 'house', 'shop', 'orders'].forEach(k => fill(Z[k].x, Z[k].y, Z[k].w, Z[k].h));
     const stage = restStage();
     if (stage === 'open' || stage === 'building') fill(Z.restaurant.x, Z.restaurant.y, Z.restaurant.w, Z.restaurant.h); else fill(33, 5, 2, 1);
     if (standBuilt()) fill(Z.stand.x, Z.stand.y, Z.stand.w, Z.stand.h); else fill(6, 24, 1, 1);
+    if (antiquesOn()) fill(Z.antiques.x, Z.antiques.y, Z.antiques.w, Z.antiques.h); else fill(Z.antiques.x + 1, Z.antiques.y + 1, 1, 1);   // building, or just the sign post
     // pond
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const dx = (x + .5 - POND.cx) / POND.rx, dy = (y + .5 - POND.cy) / POND.ry; if (dx * dx + dy * dy < 1.05) solid[y * W + x] = 1; }
     // pens (owned): fence ring minus a 2-tile gate
@@ -289,7 +298,15 @@
     zone('pasture', { emoji: '🐄', text: 'Pasture', prio: 1, tone: 'green', fn: openPanelOr('ranch', 'The pasture is not open yet.') });
     zone('stand', { emoji: '🧺', text: standBuilt() ? 'Farm stand' : 'Build farm stand', prio: 1, tone: 'green', fn: openPanelOr('stand', 'The farm stand is coming soon!') });
     zone('restaurant', { emoji: '🍽️', text: 'Restaurant', prio: 1, tone: 'green', fn: openPanelOr('restaurant', 'The restaurant is coming soon!') });
+    if (apiaryOn()) {
+      const rdy = safe(() => G.Apiary.readyCount(), 0);
+      zone('apiary', rdy ? { emoji: '🍯', text: 'Harvest honey' + (rdy > 1 ? ' ×' + rdy : ''), prio: 2.5, tone: 'gold', fn: () => { lastAct = { x: P.x, y: P.y - 0.6 }; G.Apiary.harvestAll(); } }
+        : { emoji: '🐝', text: 'Apiary', prio: 1, tone: 'green', fn: openPanelOr('apiary', 'The apiary is coming soon!') });
+    } else zone('apiary', { emoji: '🐝', text: 'Build an apiary', prio: 0.9, tone: 'blue', fn: openPanelOr('apiary', 'The apiary is coming soon!') });
     zone('house', { emoji: '🏠', text: 'Farmhouse', prio: 0.8, tone: 'blue', fn: () => G.uikit.showTab('almanac') });
+    { const on = antiquesOn(), offers = on ? safe(() => G.Antiques.offerCount(), 0) : 0;
+      zone('antiques', on ? { emoji: offers ? '💰' : '🏺', text: offers ? 'Antique offers (' + offers + ')' : 'Antique store', prio: offers ? 2 : 1, tone: offers ? 'gold' : 'green', fn: openPanelOr('antiques', 'The antique store is coming soon!') }
+        : { emoji: '🏺', text: 'Open an antique store', prio: 0.9, tone: 'blue', fn: openPanelOr('antiques', 'The antique store is coming soon!') }); }
     return out;
   }
   function bestTarget(px, py) {
@@ -993,6 +1010,33 @@
       c.fillText(l1, X + w / 2, Y + 118); c.fillText(l2, X + w / 2, Y + 131); c.font = '700 8.5px system-ui,sans-serif'; c.fillText(l3, X + w / 2, Y + 142);
     }
   }
+  function paintApiary(c, P_, built, hives) { // flat fallback (art-apiary.js draws the real 3D version)
+    const z = Z.apiary, X = z.x * T, Y = z.y * T, w = z.w * T, h = z.h * T;
+    if (!built) {
+      c.save(); c.setLineDash([7, 6]); c.lineWidth = 2; c.strokeStyle = 'rgba(255,255,255,.8)'; rr(c, X + 6, Y + 8, w - 12, h - 12, 10); c.stroke(); c.restore();
+      emStatic(c, '🐝', X + 34, Y + h / 2 + 2, 26, .8);
+      plate(c, X + w / 2 + 14, Y + h / 2, 'BUILD AN APIARY · walk up and tap', { size: 8.5, bg: '#ffe39a' });
+      return;
+    }
+    c.fillStyle = P_.snow ? 'rgba(255,255,255,.5)' : 'rgba(255,236,150,.35)'; rr(c, X + 4, Y + 6, w - 8, h - 8, 12); c.fill();
+    hives.forEach((hv, i) => { const s_ = APIARY_SLOTS[i]; if (!s_) return; c.fillStyle = '#fff4d6'; c.fillRect(s_[0] * T - 10, s_[1] * T - 16, 20, 16); c.fillStyle = '#f2b631'; c.fillRect(s_[0] * T - 10, s_[1] * T - 10, 20, 3); });
+    plate(c, X + w / 2, Y + h + 4, 'APIARY', { size: 8.5, bg: '#ffe39a' });
+  }
+  function paintAntiques(c, R, built, ctx) { // flat fallback (art-antiques.js draws the real 3D store)
+    const { x, y, w, h } = R;
+    if (!built) {
+      c.save(); c.setLineDash([8, 6]); c.lineWidth = 2.5; c.strokeStyle = 'rgba(255,255,255,.85)'; rr(c, x + 6, y + 6, w - 12, h - 12, 12); c.stroke(); c.restore();
+      emStatic(c, '🏺', x + 46, y + h / 2, 30, .85);
+      plate(c, x + w / 2 + 20, y + h / 2 - 8, 'OPEN AN ANTIQUE STORE', { size: 10, bg: '#ffe39a' });
+      plate(c, x + w / 2 + 20, y + h / 2 + 12, 'walk around front and tap', { size: 8, bg: '#fff4d6' });
+      return;
+    }
+    shade(c, x, y, w, h, .24);
+    c.fillStyle = '#7a5a3a'; c.fillRect(x + 8, y + 26, w - 16, h - 28);
+    c.fillStyle = '#5b3a24'; c.beginPath(); c.moveTo(x, y + 30); c.lineTo(x + 20, y + 4); c.lineTo(x + w - 20, y + 4); c.lineTo(x + w, y + 30); c.closePath(); c.fill();
+    ['🕰️', '🪑', '🏺', '📻'].forEach((e, i) => emStatic(c, e, x + 40 + i * ((w - 80) / 3), y + h - 22, 20));
+    plate(c, x + w / 2, y + 18, String(ctx.name || 'ANTIQUES').toUpperCase(), { size: 10, bg: '#f3e2c0' });
+  }
   function paintDecor(c, P_) {
     DECOR_TREES.forEach((t, i) => tree(c, t[0] * T, t[1] * T + 8, 0.95, t[2], P_, 300 + i));
     // hay bales + water well near house
@@ -1088,6 +1132,11 @@
     L.lots.forEach(lot => flat('lot', 'buildings', R(lot.rect), { type: lot.type, def: G.DATA.buildings[lot.type] || {} }, c => paintLot(c, R(lot.rect), lot.type)));
     L.pens.forEach(pen => flat('pen', 'pens', R({ x: pen.rect.x, y: pen.rect.y, w: 6, h: 4 }), { pen, type: pen.type, owned: pen.owned, def: G.DATA.animals[pen.type] || {} }, c => paintPen(c, pen, P_)));
     flat('pasture', 'pasture', R(Z.pasture), { gate: PASTURE_GATE }, c => paintPasture(c, P_));
+    const apOn = apiaryOn(), hv = apiaryHives();
+    flat('apiary', 'apiary', R(Z.apiary), { built: apOn, hives: hv.map(h => Object.assign({}, h)), slots: APIARY_SLOTS, maxHives: safe(() => G.Apiary.maxHives(), 4), upgrades: safe(() => G.Apiary.upgrades(), {}) }, c => paintApiary(c, P_, apOn, hv));
+    const anOn = antiquesOn();
+    const anCtx = { built: anOn, level: safe(() => G.Antiques.level(), 1), display: safe(() => G.Antiques.display(), []) || [], upgrades: safe(() => G.Antiques.upgrades(), {}) || {}, name: safe(() => G.Antiques.name(), 'Antiques') };
+    if (anOn) up('antiques', 'antiques', R(Z.antiques), anCtx, (c, r) => paintAntiques(c, r, true, anCtx)); else flat('antiques', 'antiques', R(Z.antiques), anCtx, c => paintAntiques(c, R(Z.antiques), false, anCtx));
     flat('trees', null, { x: 0, y: 0, w: W * T, h: H * T }, { decor: DECOR_TREES, windbreak: !!(G.hasExpansion && G.hasExpansion('windbreak_trees')) }, c => { paintTreeLine(c, P_); paintDecor(c, P_); });
     return out;
   }
@@ -1112,7 +1161,7 @@
   let props = [], bakedProps = []; const propCv = new Map();
   // Scenery nobody can walk behind (tree lines outside the farm fence, things beyond the road) is baked into the
   // ground tiles once instead of being blended as a separate sprite every frame.
-  const isBackdrop = p => !p.zone && p.bld == null && (p.sortY < 2.35 || p.x1 <= 2 * T + 6 || p.x0 >= 38 * T - 6 || p.sortY > ROAD1 + 1.2);
+  const isBackdrop = p => !p.zone && p.bld == null && (p.sortY < 2.35 || p.x1 <= 2 * T + 6 || p.x0 >= 38 * T - 6 || p.sortY > H - 1.3);
   function buildProps() {
     props = []; bakedProps = []; propCv.clear();
     const A = ART().structures || {};
@@ -1167,7 +1216,9 @@
   function layoutSig() {
     const s = S(), cal = G.calendar();
     return [cal.season, s.plots.length, s.maxPlots > s.plots.length ? G.plotCost() : 0, s.buildings.map(b => b.type).join(','), penTypes().map(t => s.animals.some(a => a.type === t) ? 1 : 0).join(''),
-      (s.ownedExpansions || []).filter(k => k === 'center_pivot' || k === 'windbreak_trees').join(','), standBuilt() ? 1 : 0, restStage(), restStage() === 'open' ? tableCount() : 0, hasTractor() ? 1 : 0, Math.round(V.dpr * 10)].join('|');
+      (s.ownedExpansions || []).filter(k => k === 'center_pivot' || k === 'windbreak_trees').join(','), standBuilt() ? 1 : 0, restStage(), restStage() === 'open' ? tableCount() : 0, hasTractor() ? 1 : 0, Math.round(V.dpr * 10),
+      antiquesOn() ? 'N' + safe(() => G.Antiques.level(), 1) + JSON.stringify(safe(() => G.Antiques.upgrades(), {})) + safe(() => G.Antiques.display().map(d => d && d.key).join(','), '') : '',
+      apiaryOn() ? 'A' + apiaryHives().map(h => (h.supers || 0) + (h.status === 'away' ? 'a' : h.status === 'empty' ? 'e' : '')).join('') + JSON.stringify(safe(() => G.Apiary.upgrades(), {})) : ''].join('|');
   }
   function checkLayout() {
     if (!S()) return;
@@ -1312,6 +1363,32 @@
         else { f = 1; sit = true; }
         const pos = along(pth, ease(f));
         npcSprite(push, cu, pos[0], pos[1] + (sit ? 0.1 : 0), walk, t, i, sit);
+      });
+    }
+    // ---- antique store shoppers
+    if (antiquesOn()) {
+      const cs = safe(() => G.Antiques.customers(), []) || [], z = Z.antiques;
+      cs.slice(0, 6).forEach((cu, i) => {
+        const h = hash(cu.id), tt = clamp(+cu.t || 0, 0, 1), door = [z.x + 2 + h * (z.w - 4), z.y + z.h + 0.35], start = [h < .5 ? 13 : 27, 27.3 + h * .6];
+        let x, y, walk = false;
+        if (cu.phase === 'arriving') { const e = ease(tt); x = lerp(start[0], door[0], e); y = e < .5 ? lerp(start[1], 32.6, e * 2) : lerp(32.6, door[1], (e - .5) * 2); walk = true; }
+        else if (cu.phase === 'leaving') { const e = ease(tt); x = lerp(door[0], start[0], e); y = e < .5 ? lerp(door[1], 32.6, e * 2) : lerp(32.6, start[1], (e - .5) * 2); walk = true; }
+        else { x = door[0] + Math.sin(t * .7 + h * 6) * .25; y = door[1]; }
+        npcSprite(push, cu, x, y, walk, t, i);
+      });
+    }
+    // ---- apiary bees
+    if (apiaryOn()) {
+      const ahB = (ART().actors || {}).apiaryBee, cal = G.calendar(), night = cal.dayProgress < 0.05 || cal.dayProgress > 0.8;
+      apiaryHives().forEach((hv, i) => {
+        const s_ = APIARY_SLOTS[i]; if (!s_) return; const hx = s_[0] * T, hy = s_[1] * T; if (!vis(hx, hy, 60)) return;
+        const busy = hv.status === 'active' || hv.status === 'ready';
+        if (busy && !night && cal.season !== 'winter') for (let k = 0; k < 3; k++) {
+          const ph = t * (0.9 + k * 0.23) + i * 1.7 + k * 2.1, bx = hx + Math.cos(ph) * (14 + k * 7) + Math.sin(ph * 2.3) * 4, by = hy + Math.sin(ph * 1.3) * (8 + k * 3), bz = 22 + Math.sin(ph * 1.9) * 9 + k * 6;
+          push(s_[1] + 0.02, c => { if (ahB) return ahB(c, { x: bx, y: by, z: bz, t, i, k, dir: Math.cos(ph) < 0 ? 1 : -1 }, Hx); c.fillStyle = 'rgba(20,10,0,.18)'; c.beginPath(); c.ellipse(bx + 3, by + 2, 2.5, 1.2, 0, 0, TAU); c.fill(); em(c, '🐝', bx, by - lift(bz), 9, { flip: Math.cos(ph) < 0 }); });
+        }
+        if (hv.status === 'ready') push(s_[1] + 0.03, c => bubble(c, hx, hy - lift(46), '🍯', t + i, 13));
+        else if (hv.status === 'sick') push(s_[1] + 0.03, c => bubble(c, hx, hy - lift(46), '🦠', t + i, 12));
       });
     }
     // ---- parked tractor
@@ -1546,7 +1623,7 @@
     lift, P3, bbAt, poly, box, cyl, castShadow, light, em, emStatic, plate, rr, shade, shadow, tree, fence, fenceRect, gatePosts, star, bubble,
     hash, mulberry, clamp, lerp, ease, S, iEmoji, iName, vis,
     plotRect: i => plotRect(i), buildingSlot: i => buildingSlot(i), layout: () => L, standBuilt, restStage, tableCount, hasTractor, equipped, driving, avatarEm: () => avatarEm(),
-    upright: () => BB > 0,
+    upright: () => BB > 0, antiquesOn: () => antiquesOn(), APIARY_SLOTS, apiaryHives: () => apiaryHives(), apiaryOn: () => apiaryOn(),
     legacy: { paintBarn, paintHouse, paintShed, paintStall, paintCoop, paintOrders, paintBuilding, paintLot, paintPen, paintPasture, paintRestaurant, paintGround, paintHills, paintPaths, paintRoad, paintPlots, paintPond, paintTreeLine, paintDecor, paintPivotTrack, drawTractor: (c, x, y, dir, def, t, moving, withDriver) => drawTractor(c, x, y, dir, def, t, moving, withDriver) }
   };
   G.WorldArtKit = Hx;
@@ -1589,6 +1666,8 @@
     bus('state:reset', () => { P.x = SPAWN[0]; P.y = SPAWN[1]; P.path = null; floats.length = 0; wander.clear(); npcPaths.clear(); cacheSig = ''; clampCam(true); });
     bus('drive:stop', () => { P.path = null; });
     bus('expansion', () => { cacheSig = ''; });
+    bus('apiary:change', () => { cacheSig = ''; });
+    bus('antiques:change', () => { cacheSig = ''; });
     bus('change', () => { hintT = 0; });
     document.addEventListener('visibilitychange', syncVisible);
     addEventListener('resize', () => { resize(); });
