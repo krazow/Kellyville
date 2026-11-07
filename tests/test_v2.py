@@ -68,6 +68,9 @@ with sync_playwright() as p:
         pg.evaluate(DISMISS); pg.evaluate(FARM)
         pg.wait_for_timeout(3500)
         pg.screenshot(path=str(shots / f'03_goto_{z}.png'))
+    # deterministic tractor pass: start at the west end of the first field row and drive east over the ready plots
+    pg.evaluate('() => { G.state.plots.forEach(p => { if (p.status === "growing") p.readyAt = Date.now() - 1; }); G.tick(); G.World.teleport(3, 10); }')
+    pg.keyboard.down('ArrowRight'); pg.wait_for_timeout(3000); pg.keyboard.up('ArrowRight')
     r['harvestedWhileDriving'] = pg.evaluate('() => G.state.stats.harvested')
     pg.evaluate('() => G.Machines.setDriving(false)')
 
