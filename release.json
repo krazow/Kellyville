@@ -1,0 +1,16 @@
+{
+  "id": "kellyville",
+  "name": "Kellyville",
+  "description": "A cozy farming game set in Eastern Washington.",
+  "site": ".",
+  "app": ".",
+  "prebuild": ["python3 build.py"],
+  "exclude": ["docs", "build.py", "shots"],
+  "sw": "sw.js",
+  "version": [{ "file": "index.html", "pattern": "<meta name=\"app-version\" content=\"([^\"]*)\">" }],
+  "android": { "enabled": true, "appId": "com.krazow.kellyville" },
+  "windows": { "enabled": true, "port": 47860 },
+  "ios": { "enabled": false },
+  "macos": { "enabled": false },
+  "extras": { "enabled": false }
+}

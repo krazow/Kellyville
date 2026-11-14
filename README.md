@@ -7,7 +7,16 @@ Built for phones and playable offline. The whole game is one self-contained `ind
 ## Play
 
 - Open `index.html` in any mobile or desktop browser.
-- Or enable **GitHub Pages** (Settings → Pages → Deploy from branch → `main` / root) and play at `https://krazow.github.io/Kellyville/`. On a phone, "Add to Home Screen" gives a full-screen app.
+- Or play at **https://krazow.github.io/Kellyville/**. On a phone, **Install app** (Chrome) or Share → **Add to Home Screen** (Safari) gives a full-screen app that also plays offline.
+- **Android and Windows:** each release on the [Releases page](https://github.com/krazow/Kellyville/releases/latest) has `Kellyville-<version>.apk` and `Kellyville-Setup-<version>.exe`.
+
+## Releasing
+
+Type **`/releasenow`** in a Claude chat on this repo. It bumps `VERSION`, adds a `CHANGELOG.md` entry and starts the
+shared [Krazow release kit](https://github.com/krazow/release-kit) pipeline: a smoke test, then a beta at
+https://krazow.github.io/Kellyville/beta/ (with its own farm save) and a pre-release with the Android and Windows beta
+apps. **`/releasenow promote`** puts the same version live and publishes the Latest release. `/releasenow all`,
+`status` and `rollback` are there too. `index.html` is still built from `src/` with `python3 build.py`.
 
 ## Features
 
