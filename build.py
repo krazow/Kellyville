@@ -18,6 +18,9 @@ html = f'''<!DOCTYPE html>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Kellyville">
 <meta name="description" content="Kellyville: a cozy farming game set in Eastern Washington.">
+<meta name="app-version" content="2.0.0">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Kellyville</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌾</text></svg>">
 <style>
@@ -27,6 +30,9 @@ html = f'''<!DOCTYPE html>
 <body>
 {read('body.html')}
 {scripts}
+<script>/* Installable and playable offline (sw.js). Opened as a file, there's no service worker, and that's fine. */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {{}});
+</script>
 </body>
 </html>
 '''
